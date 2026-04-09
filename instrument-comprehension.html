@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Instrument Comprehension — AQT Prep</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<style>
+  :root{--accent:var(--emerald);}
+  .instrument-wrap{display:flex;justify-content:center;gap:2.5rem;flex-wrap:wrap;margin-bottom:1.5rem;}
+  .instrument-block{text-align:center;}
+  .inst-label{font-family:var(--font-mono);font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.12em;margin-top:8px;}
+</style>
+</head>
+<body>
+<nav>
+  <a href="index.html" class="nav-logo"><div class="dot" style="background:var(--emerald)"></div>AQT PREP</a>
+  <div class="nav-right">
+    <span class="nav-section-label" style="border-color:var(--emerald);color:var(--emerald);">04 · Instruments</span>
+    <a href="index.html" class="nav-back">← Home</a>
+  </div>
+</nav>
+
+<div class="page-wrap">
+  <div class="screen active" id="screen-start">
+    <div class="section-header">
+      <div class="section-eyebrow" style="color:var(--emerald);">Section 04</div>
+      <h1>Instrument Comprehension</h1>
+      <p>You'll see an Attitude Indicator and Heading Indicator. Determine the aircraft's pitch, bank, and heading from the instruments and choose the correct description.</p>
+    </div>
+    <div class="settings-panel">
+      <div class="setting-group"><span class="setting-label">Questions</span>
+        <select id="sel-count"><option value="10">10 questions</option><option value="20" selected>20 questions</option></select></div>
+      <div class="setting-group"><span class="setting-label">Time per question</span>
+        <select id="sel-time"><option value="0">No limit</option><option value="15">15 seconds</option><option value="20" selected>20 seconds</option><option value="30">30 seconds</option></select></div>
+      <button class="btn" style="background:var(--emerald);color:#0a0c10;font-family:var(--font-display);font-weight:700;font-size:13px;letter-spacing:0.06em;text-transform:uppercase;padding:10px 24px;border:none;cursor:pointer;" onclick="beginSession()">Begin</button>
+    </div>
+    <div style="font-family:var(--font-mono);font-size:11px;color:var(--text-muted);line-height:1.8;">
+      <div>TIP</div>
+      <div style="color:var(--text-dim);margin-top:4px;">The attitude indicator shows the horizon line — sky is blue (top), ground is brown (bottom). Bank is shown by the horizon tilt. Pitch is shown by horizon displacement up or down. The heading indicator shows magnetic heading on a compass rose.</div>
+    </div>
+  </div>
+
+  <div class="screen" id="screen-quiz">
+    <div class="progress-wrap">
+      <div class="progress-track"><div class="progress-fill" id="progress-bar" style="width:0%;background:var(--emerald)"></div></div>
+      <span id="q-counter">1 / 20</span>
+    </div>
+    <div id="timer-wrap" style="display:none;">
+      <div class="tbar-track"><div class="tbar-fill" id="timer-bar" style="width:100%;background:var(--emerald)"></div></div>
+      <span id="timer-display">20s</span>
+    </div>
+    <div class="dot-tracker" id="dot-tracker"></div>
+    <div class="quiz-card">
+      <div style="font-family:var(--font-mono);font-size:11px;color:var(--text-muted);margin-bottom:1rem;">Read the instruments below and select the correct description of the aircraft's attitude and heading.</div>
+      <div class="instrument-wrap" id="instrument-display"></div>
+      <div class="choices" id="choices"></div>
+      <div id="explanation-box"></div>
+      <div class="ctrl-row" id="ctrl-row">
+        <button class="btn btn-outline" onclick="doSkip()">Skip</button>
+        <button class="btn" id="btn-next" onclick="doNext()" style="display:none;background:var(--emerald);color:#0a0c10;font-family:var(--font-display);font-weight:700;font-size:13px;text-transform:uppercase;padding:10px 24px;border:none;cursor:pointer;">Next</button>
+        <button class="btn" id="btn-finish" onclick="showResults()" style="display:none;background:var(--emerald);color:#0a0c10;font-family:var(--font-display);font-weight:700;font-size:13px;text-transform:uppercase;padding:10px 24px;border:none;cursor:pointer;">View Results</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="screen" id="screen-results">
+    <div class="results-header">
+      <div class="section-eyebrow" style="color:var(--emerald);">Session complete</div>
+      <div class="score-big" id="score-pct" style="color:var(--emerald);">0%</div>
+      <div class="score-label" id="score-grade"></div>
+    </div>
+    <div class="meta-grid" id="meta-grid"></div>
+    <div class="review-section"><h2>Full Review</h2><div id="review-list"></div></div>
+    <div class="ctrl-row" style="margin-top:2rem;">
+      <button class="btn" style="background:var(--emerald);color:#0a0c10;font-family:var(--font-display);font-weight:700;font-size:13px;text-transform:uppercase;padding:10px 24px;border:none;cursor:pointer;" onclick="restart()">Try Again</button>
+      <a href="index.html" class="btn btn-outline">← All Sections</a>
+    </div>
+  </div>
+</div>
+
+<script>
+// Draw Attitude Indicator SVG
+function drawAI(pitch, bank) {
+  // pitch: degrees (+ = nose up, - = nose down), bank: degrees (+ = right, - = left)
+  const R = 70;
+  const cx = 80, cy = 80;
+  const pitchPx = pitch * 2; // 2px per degree
+  const bankRad = bank * Math.PI / 180;
+
+  return `<svg width="160" height="160" viewBox="0 0 160 160">
+    <defs>
+      <clipPath id="ai-clip"><circle cx="${cx}" cy="${cy}" r="${R}"/></clipPath>
+    </defs>
+    <g clip-path="url(#ai-clip)">
+      <!-- Sky -->
+      <rect x="0" y="0" width="160" height="160" fill="#1a3a6b"/>
+      <!-- Ground group rotated by bank, then shifted by pitch -->
+      <g transform="rotate(${bank},${cx},${cy})">
+        <!-- Ground -->
+        <rect x="${cx-120}" y="${cy - pitchPx}" width="240" height="160" fill="#6b3d1e"/>
+        <!-- Horizon line -->
+        <line x1="${cx-120}" y1="${cy - pitchPx}" x2="${cx+120}" y2="${cy - pitchPx}" stroke="#fff" stroke-width="2"/>
+        <!-- Pitch marks -->
+        ${[-20,-10,10,20].map(p=>`<line x1="${cx-20}" y1="${cy - pitchPx - p*2}" x2="${cx+20}" y2="${cy - pitchPx - p*2}" stroke="rgba(255,255,255,0.5)" stroke-width="1"/>`).join('')}
+      </g>
+    </g>
+    <!-- Bezel -->
+    <circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="#333" stroke-width="6"/>
+    <circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="#555" stroke-width="1"/>
+    <!-- Bank index marks at top -->
+    ${[30,45,60].map(a=>{
+      const r=bankRad; // unused here, these are fixed
+      const angles = [-60,-45,-30,30,45,60];
+      return '';
+    }).join('')}
+    ${[-60,-45,-30,-20,-10,0,10,20,30,45,60].map(a=>{
+      const rad=a*Math.PI/180;
+      const len = [0,30,45,60].includes(Math.abs(a))?8:5;
+      const x1=cx+Math.sin(rad)*(R-2), y1=cy-Math.cos(rad)*(R-2);
+      const x2=cx+Math.sin(rad)*(R-2-len), y2=cy-Math.cos(rad)*(R-2-len);
+      return `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="#aaa" stroke-width="1.5"/>`;
+    }).join('')}
+    <!-- Bank pointer (moves with aircraft) -->
+    <g transform="rotate(${bank},${cx},${cy})">
+      <polygon points="${cx},${cy-R+14} ${cx-5},${cy-R+22} ${cx+5},${cy-R+22}" fill="#fff"/>
+    </g>
+    <!-- Fixed horizon reference (miniature aircraft) -->
+    <line x1="${cx-20}" y1="${cy}" x2="${cx-6}" y2="${cy}" stroke="#f5a623" stroke-width="3"/>
+    <line x1="${cx+6}" y1="${cy}" x2="${cx+20}" y2="${cy}" stroke="#f5a623" stroke-width="3"/>
+    <circle cx="${cx}" cy="${cy}" r="3" fill="#f5a623"/>
+  </svg>`;
+}
+
+// Draw Heading Indicator SVG
+function drawHI(heading) {
+  const cx=80, cy=80, R=70;
+  const headings = [
+    {label:'N',deg:0},{label:'3',deg:30},{label:'6',deg:60},{label:'E',deg:90},
+    {label:'12',deg:120},{label:'15',deg:150},{label:'S',deg:180},
+    {label:'21',deg:210},{label:'24',deg:240},{label:'W',deg:270},
+    {label:'30',deg:300},{label:'33',deg:330}
+  ];
+  const cardinals = ['N','E','S','W'];
+  return `<svg width="160" height="160" viewBox="0 0 160 160">
+    <defs><clipPath id="hi-clip"><circle cx="${cx}" cy="${cy}" r="${R}"/></clipPath></defs>
+    <circle cx="${cx}" cy="${cy}" r="${R}" fill="#111" stroke="#555" stroke-width="4"/>
+    <g transform="rotate(${-heading},${cx},${cy})">
+      ${headings.map(h=>{
+        const rad=(h.deg)*Math.PI/180;
+        const isCard=cardinals.includes(h.label);
+        const x1=cx+Math.sin(rad)*(R-4), y1=cy-Math.cos(rad)*(R-4);
+        const x2=cx+Math.sin(rad)*(R-12), y2=cy-Math.cos(rad)*(R-12);
+        const tx=cx+Math.sin(rad)*(R-22), ty=cy-Math.cos(rad)*(R-22)+4;
+        return `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="${isCard?'#fff':'#888'}" stroke-width="${isCard?2:1}"/>
+        <text x="${tx.toFixed(1)}" y="${ty.toFixed(1)}" text-anchor="middle" font-size="${isCard?12:9}" fill="${h.label==='N'?'#e84040':isCard?'#fff':'#aaa'}" font-family="IBM Plex Mono">${h.label}</text>`;
+      }).join('')}
+      <!-- Tick marks every 5 degrees -->
+      ${Array.from({length:72},(_,i)=>i*5).filter(d=>!headings.map(h=>h.deg).includes(d)).map(d=>{
+        const rad=d*Math.PI/180;
+        const x1=cx+Math.sin(rad)*(R-4), y1=cy-Math.cos(rad)*(R-4);
+        const x2=cx+Math.sin(rad)*(R-8), y2=cy-Math.cos(rad)*(R-8);
+        return `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="#444" stroke-width="1"/>`;
+      }).join('')}
+    </g>
+    <!-- Fixed index (lubber line) at top -->
+    <polygon points="${cx},${cy-R+2} ${cx-5},${cy-R+12} ${cx+5},${cy-R+12}" fill="#f5a623"/>
+    <!-- Center -->
+    <circle cx="${cx}" cy="${cy}" r="4" fill="#666"/>
+    <circle cx="${cx}" cy="${cy}" r="2" fill="#aaa"/>
+  </svg>`;
+}
+
+// Generate question scenarios
+const SCENARIOS = [];
+
+function pitchLabel(p) {
+  if(p===0) return 'wings level (no pitch)';
+  if(p>0) return `${p}° nose up`;
+  return `${Math.abs(p)}° nose down`;
+}
+function bankLabel(b) {
+  if(b===0) return 'wings level (no bank)';
+  if(b>0) return `${b}° right bank`;
+  return `${Math.abs(b)}° left bank`;
+}
+function headingLabel(h) {
+  const dirs = {0:'North (360°)',45:'Northeast (045°)',90:'East (090°)',135:'Southeast (135°)',180:'South (180°)',225:'Southwest (225°)',270:'West (270°)',315:'Northwest (315°)'};
+  return dirs[h] || `${h}°`;
+}
+
+const pitches = [-10,-5,0,5,10];
+const banks = [-30,-15,0,15,30];
+const hdgs = [0,45,90,135,180,225,270,315];
+
+function shuffle(arr){const a=[...arr];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+
+function generateScenario() {
+  const pitch = pitches[Math.floor(Math.random()*pitches.length)];
+  const bank = banks[Math.floor(Math.random()*banks.length)];
+  const heading = hdgs[Math.floor(Math.random()*hdgs.length)];
+  const correct_text = `${pitchLabel(pitch)}, ${bankLabel(bank)}, heading ${headingLabel(heading)}`;
+
+  const wrongs = new Set();
+  const pool = [];
+  pitches.forEach(p => banks.forEach(b => hdgs.forEach(h => {
+    const txt = `${pitchLabel(p)}, ${bankLabel(b)}, heading ${headingLabel(h)}`;
+    if(txt !== correct_text) pool.push(txt);
+  })));
+  const shuffledPool = shuffle(pool);
+  const wrongChoices = shuffledPool.slice(0,3);
+  const allChoices = shuffle([correct_text, ...wrongChoices]);
+  return { pitch, bank, heading, correct_text, choices:allChoices, correct:allChoices.indexOf(correct_text) };
+}
+
+let session=[],answers=[],current=0,timerInterval=null,timePerQ=20,totalQ=20;
+
+function beginSession(){
+  totalQ=parseInt(document.getElementById('sel-count').value);
+  timePerQ=parseInt(document.getElementById('sel-time').value);
+  session=[];for(let i=0;i<totalQ;i++)session.push(generateScenario());
+  answers=new Array(totalQ).fill(null);current=0;
+  showScreen('screen-quiz');renderQ();
+}
+function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');}
+function renderDots(){const t=document.getElementById('dot-tracker');t.innerHTML='';session.forEach((_,i)=>{const d=document.createElement('div');d.className='q-dot'+(i===current?' current':answers[i]===null?'':answers[i]==='skip'?' skip':answers[i]===session[i].correct?' ok':' bad');t.appendChild(d);});}
+
+function renderQ(){
+  clearInterval(timerInterval);const q=session[current];
+  document.getElementById('progress-bar').style.width=(current/session.length*100)+'%';
+  document.getElementById('q-counter').textContent=(current+1)+' / '+session.length;
+  document.getElementById('instrument-display').innerHTML=
+    `<div class="instrument-block">${drawAI(q.pitch, q.bank)}<div class="inst-label">Attitude Indicator</div></div>
+     <div class="instrument-block">${drawHI(q.heading)}<div class="inst-label">Heading Indicator</div></div>`;
+  renderDots();
+  const ch=document.getElementById('choices');ch.innerHTML='';
+  q.choices.forEach((c,i)=>{const btn=document.createElement('button');btn.className='choice-btn';btn.innerHTML='<span class="choice-letter">'+String.fromCharCode(65+i)+'</span>'+c;btn.onclick=()=>selectAnswer(i);ch.appendChild(btn);});
+  document.getElementById('explanation-box').innerHTML='';
+  document.getElementById('btn-next').style.display='none';document.getElementById('btn-finish').style.display='none';
+  const sk=document.querySelector('#ctrl-row .btn-outline');if(sk)sk.style.display='';
+  if(timePerQ>0){let left=timePerQ;document.getElementById('timer-wrap').style.display='';document.getElementById('timer-display').textContent=left+'s';document.getElementById('timer-bar').style.width='100%';
+    timerInterval=setInterval(()=>{left--;const pct=(left/timePerQ)*100;document.getElementById('timer-bar').style.width=pct+'%';document.getElementById('timer-bar').className='tbar-fill'+(pct<25?' danger':pct<50?' warn':'');document.getElementById('timer-display').textContent=left+'s';if(left<=0){clearInterval(timerInterval);doSkip(true);}},1000);
+  }else document.getElementById('timer-wrap').style.display='none';
+}
+
+function selectAnswer(idx){if(answers[current]!==null)return;clearInterval(timerInterval);answers[current]=idx;const q=session[current];
+  document.querySelectorAll('.choice-btn').forEach((b,i)=>{b.disabled=true;if(i===q.correct)b.className='choice-btn correct';else if(i===idx)b.className='choice-btn incorrect';});
+  const ok=idx===q.correct;
+  document.getElementById('explanation-box').innerHTML='<div class="explanation" style="border-color:var(--emerald)"><div class="explanation-label" style="color:var(--emerald)">'+(ok?'Correct':'Incorrect')+'</div><p>The attitude indicator shows '+pitchLabel(q.pitch)+' and '+bankLabel(q.bank)+'. The heading indicator shows a heading of '+headingLabel(q.heading)+'.</p></div>';
+  const sk=document.querySelector('#ctrl-row .btn-outline');if(sk)sk.style.display='none';
+  if(current<session.length-1)document.getElementById('btn-next').style.display='';else document.getElementById('btn-finish').style.display='';renderDots();
+}
+function doSkip(){clearInterval(timerInterval);if(answers[current]===null)answers[current]='skip';const q=session[current];
+  document.querySelectorAll('.choice-btn').forEach((b,i)=>{b.disabled=true;if(i===q.correct)b.className='choice-btn correct';});
+  document.getElementById('explanation-box').innerHTML='<div class="explanation" style="border-color:var(--emerald)"><div class="explanation-label" style="color:var(--emerald)">Skipped</div><p>Correct: '+q.correct_text+'</p></div>';
+  const sk=document.querySelector('#ctrl-row .btn-outline');if(sk)sk.style.display='none';
+  if(current<session.length-1)document.getElementById('btn-next').style.display='';else document.getElementById('btn-finish').style.display='';renderDots();
+}
+function doNext(){current++;renderQ();}
+function showResults(){clearInterval(timerInterval);
+  let correct=0,incorrect=0,skipped=0;
+  answers.forEach((a,i)=>{if(a===null||a==='skip')skipped++;else if(a===session[i].correct)correct++;else incorrect++;});
+  const pct=Math.round(correct/session.length*100);
+  document.getElementById('score-pct').textContent=pct+'%';
+  document.getElementById('score-grade').textContent=pct>=90?'Excellent instrument reading skills':pct>=70?'Good — review attitude interpretation':pct>=50?'Needs work — practice instrument reading':'Study instrument interpretation fundamentals';
+  document.getElementById('meta-grid').innerHTML=`<div class="meta-item"><span class="meta-num" style="color:var(--green)">${correct}</span><span class="meta-lbl">Correct</span></div><div class="meta-item"><span class="meta-num" style="color:var(--red)">${incorrect}</span><span class="meta-lbl">Incorrect</span></div><div class="meta-item"><span class="meta-num" style="color:var(--amber)">${skipped}</span><span class="meta-lbl">Skipped</span></div><div class="meta-item"><span class="meta-num">${session.length}</span><span class="meta-lbl">Total</span></div>`;
+  const rl=document.getElementById('review-list');rl.innerHTML='';
+  session.forEach((q,i)=>{const a=answers[i];const ok=a===q.correct,skip=a===null||a==='skip';
+    rl.innerHTML+=`<div class="review-item"><span class="review-badge ${ok?'badge-correct':skip?'badge-skipped':'badge-incorrect'}">${ok?'Correct':skip?'Skipped':'Incorrect'}</span>
+    <div class="review-q">Q${i+1}: Heading ${headingLabel(q.heading)}, ${pitchLabel(q.pitch)}, ${bankLabel(q.bank)}</div>
+    ${!ok&&!skip?`<div class="review-detail">Your answer: ${q.choices[a]}</div>`:''}
+    <div class="review-detail">Correct: ${q.correct_text}</div></div>`;});
+  showScreen('screen-results');
+}
+function restart(){beginSession();}
+</script>
+</body>
+</html>

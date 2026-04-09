@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Table Reading — AQT Prep</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<style>
+  :root { --accent: var(--cyan); }
+  .lookup-table td.hl-row { background: rgba(0,212,212,0.08); }
+  .lookup-table th.hl-col, .lookup-table td.hl-col { background: rgba(0,212,212,0.08); }
+  .lookup-table td.hl-cell { background: rgba(0,212,212,0.25); color: var(--cyan); font-weight: 600; outline: 2px solid var(--cyan); }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="nav-logo"><div class="dot"></div>AQT PREP</a>
+  <div class="nav-right">
+    <span class="nav-section-label" style="border-color:var(--cyan);color:var(--cyan);">02 · Table Reading</span>
+    <a href="index.html" class="nav-back">← Home</a>
+  </div>
+</nav>
+
+<div class="page-wrap">
+
+  <div class="screen active" id="screen-start">
+    <div class="section-header">
+      <div class="section-eyebrow" style="color:var(--cyan);">Section 02</div>
+      <h1>Table Reading</h1>
+      <p>Locate values in an X/Y coordinate table as fast as possible. On the real AQT you have 7 minutes for 40 questions — about 10 seconds per question. Speed is everything.</p>
+    </div>
+    <div class="settings-panel">
+      <div class="setting-group">
+        <span class="setting-label">Questions</span>
+        <select id="sel-count">
+          <option value="10">10 questions</option>
+          <option value="20" selected>20 questions</option>
+          <option value="40">40 questions (full)</option>
+        </select>
+      </div>
+      <div class="setting-group">
+        <span class="setting-label">Time per question</span>
+        <select id="sel-time">
+          <option value="0">No limit</option>
+          <option value="10" selected>10 seconds (real test)</option>
+          <option value="15">15 seconds</option>
+          <option value="20">20 seconds</option>
+        </select>
+      </div>
+      <button class="btn" style="background:var(--cyan);color:#0a0c10;font-family:var(--font-display);font-weight:700;font-size:13px;letter-spacing:0.06em;text-transform:uppercase;padding:10px 24px;border:none;cursor:pointer;" onclick="beginSession()">
+        Begin
+      </button>
+    </div>
+    <div style="font-family:var(--font-mono);font-size:11px;color:var(--text-muted);line-height:1.8;">
+      <div>HOW IT WORKS</div>
+      <div style="color:var(--text-dim);margin-top:4px;">You'll see a table of numbers. Find where the given X and Y values intersect and select the correct cell value from four options. Highlighting helps you trace the row and column.</div>
+    </div>
+  </div>
+
+  <div class="screen" id="screen-quiz">
+    <div class="progress-wrap">
+      <div class="progress-track"><div class="progress-fill" id="progress-bar" style="width:0%;background:var(--cyan)"></div></div>
+      <span id="q-counter">1 / 20</span>
+    </div>
+    <div id="timer-wrap" style="display:none;">
+      <div class="tbar-track"><div class="tbar-fill" id="timer-bar" style="width:100%;background:var(--cyan)"></div></div>
+      <span id="timer-display">10s</span>
+    </div>
+    <div class="dot-tracker" id="dot-tracker"></div>
+    <div class="quiz-card" id="quiz-card">
+      <div class="lookup-prompt" id="lookup-prompt" style="border-color:var(--cyan);"></div>
+      <div id="table-wrap" style="overflow-x:auto;margin-bottom:1rem;"></div>
+      <div class="choices" id="choices"></div>
+      <div id="explanation-box"></div>
+      <div class="ctrl-row" id="ctrl-row">
+        <button class="btn btn-outline" onclick="doSkip()">Skip</button>
+        <button class="btn" id="btn-next" onclick="doNext()" style="display:none;background:var(--cyan);color:#0a0c10;font-family:var(--font-display);font-weight:700;font-size:13px;letter-spacing:0.06em;text-transform:uppercase;padding:10px 24px;border:none;cursor:pointer;">Next</button>
+        <button class="btn" id="btn-finish" onclick="showResults()" style="display:none;background:var(--cyan);color:#0a0c10;font-family:var(--font-display);font-weight:700;font-size:13px;letter-spacing:0.06em;text-transform:uppercase;padding:10px 24px;border:none;cursor:pointer;">View Results</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="screen" id="screen-results">
+    <div class="results-header">
+      <div class="section-eyebrow" style="color:var(--cyan);">Session complete</div>
+      <div class="score-big" id="score-pct" style="color:var(--cyan);">0%</div>
+      <div class="score-label" id="score-grade"></div>
+    </div>
+    <div class="meta-grid" id="meta-grid"></div>
+    <div class="review-section">
+      <h2>Full Review</h2>
+      <div id="review-list"></div>
+    </div>
+    <div class="ctrl-row" style="margin-top:2rem;">
+      <button class="btn" style="background:var(--cyan);color:#0a0c10;font-family:var(--font-display);font-weight:700;font-size:13px;text-transform:uppercase;padding:10px 24px;border:none;cursor:pointer;" onclick="restart()">Try Again</button>
+      <a href="index.html" class="btn btn-outline">← All Sections</a>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// Generate a big reusable lookup table
+function makeTable() {
+  // X: -3 to 3, Y: -3 to 3, values = some formula
+  const xVals = [-3,-2,-1,0,1,2,3];
+  const yVals = [-3,-2,-1,0,1,2,3];
+  const data = {};
+  yVals.forEach(y => {
+    data[y] = {};
+    xVals.forEach(x => {
+      data[y][x] = ((y * 7) + (x * 3) + 50);
+    });
+  });
+  return { xVals, yVals, data };
+}
+
+const TABLE = makeTable();
+
+function generateQuestion() {
+  const xi = Math.floor(Math.random() * TABLE.xVals.length);
+  const yi = Math.floor(Math.random() * TABLE.yVals.length);
+  const x = TABLE.xVals[xi];
+  const y = TABLE.yVals[yi];
+  const correct_val = TABLE.data[y][x];
+
+  const wrongs = new Set();
+  while(wrongs.size < 3) {
+    const offset = (Math.floor(Math.random()*10)+1) * (Math.random()<0.5?1:-1);
+    wrongs.add(correct_val + offset);
+  }
+  const allChoices = shuffle([correct_val, ...wrongs]);
+  const correctIdx = allChoices.indexOf(correct_val);
+
+  return {
+    x, y, correct_val, correctIdx,
+    choices: allChoices.map(v=>String(v)),
+    correct: correctIdx,
+    xi, yi
+  };
+}
+
+function shuffle(arr) {
+  const a=[...arr];
+  for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}
+  return a;
+}
+
+function renderTable(q, revealed) {
+  const { xVals, yVals, data, xi, yi } = q;
+  let html = '<table class="lookup-table"><thead><tr><th>Y \\ X</th>';
+  xVals.forEach((x,ci) => {
+    html += `<th class="${revealed&&ci===q.xi?'hl-col':''}">${x}</th>`;
+  });
+  html += '</tr></thead><tbody>';
+  yVals.forEach((y, ri) => {
+    html += `<tr>`;
+    html += `<th class="${revealed&&ri===q.yi?'hl-row':''}">${y}</th>`;
+    xVals.forEach((x, ci) => {
+      const isTarget = ci===q.xi && ri===q.yi;
+      const isRow = ri===q.yi && revealed;
+      const isCol = ci===q.xi && revealed;
+      let cls = isTarget&&revealed ? 'hl-cell' : (isRow||isCol?'hl-row':'');
+      html += `<td class="${cls}">${data[y][x]}</td>`;
+    });
+    html += '</tr>';
+  });
+  html += '</tbody></table>';
+  return html;
+}
+
+let session=[], answers=[], current=0, timerInterval=null, timePerQ=10, totalQ=20;
+
+function beginSession() {
+  totalQ = parseInt(document.getElementById('sel-count').value);
+  timePerQ = parseInt(document.getElementById('sel-time').value);
+  session = [];
+  for(let i=0;i<totalQ;i++) session.push(generateQuestion());
+  answers = new Array(totalQ).fill(null);
+  current = 0;
+  showScreen('screen-quiz');
+  renderQ();
+}
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function renderDots() {
+  const t=document.getElementById('dot-tracker');
+  t.innerHTML='';
+  session.forEach((_,i)=>{
+    const d=document.createElement('div');
+    d.className='q-dot'+(i===current?' current':answers[i]===null?'':answers[i]==='skip'?' skip':answers[i]===session[i].correct?' ok':' bad');
+    t.appendChild(d);
+  });
+}
+
+function renderQ() {
+  clearInterval(timerInterval);
+  const q=session[current];
+  document.getElementById('progress-bar').style.width=(current/session.length*100)+'%';
+  document.getElementById('q-counter').textContent=(current+1)+' / '+session.length;
+  document.getElementById('lookup-prompt').textContent='Find the value where X = '+q.x+' and Y = '+q.y;
+  document.getElementById('table-wrap').innerHTML=renderTable(q, false);
+  renderDots();
+
+  const ch=document.getElementById('choices');
+  ch.innerHTML='';
+  q.choices.forEach((c,i)=>{
+    const btn=document.createElement('button');
+    btn.className='choice-btn';
+    btn.innerHTML='<span class="choice-letter">'+String.fromCharCode(65+i)+'</span>'+c;
+    btn.onclick=()=>selectAnswer(i);
+    ch.appendChild(btn);
+  });
+
+  document.getElementById('explanation-box').innerHTML='';
+  document.getElementById('btn-next').style.display='none';
+  document.getElementById('btn-finish').style.display='none';
+  const skipBtn=document.querySelector('#ctrl-row .btn-outline');
+  if(skipBtn) skipBtn.style.display='';
+
+  if(timePerQ>0){
+    let left=timePerQ;
+    document.getElementById('timer-wrap').style.display='';
+    document.getElementById('timer-display').textContent=left+'s';
+    document.getElementById('timer-bar').style.width='100%';
+    timerInterval=setInterval(()=>{
+      left--;
+      const pct=(left/timePerQ)*100;
+      document.getElementById('timer-bar').style.width=pct+'%';
+      document.getElementById('timer-bar').className='tbar-fill'+(pct<25?' danger':pct<50?' warn':'');
+      document.getElementById('timer-display').textContent=left+'s';
+      if(left<=0){clearInterval(timerInterval);doSkip(true);}
+    },1000);
+  } else {
+    document.getElementById('timer-wrap').style.display='none';
+  }
+}
+
+function selectAnswer(idx) {
+  if(answers[current]!==null) return;
+  clearInterval(timerInterval);
+  answers[current]=idx;
+  const q=session[current];
+  document.getElementById('table-wrap').innerHTML=renderTable(q,true);
+  document.querySelectorAll('.choice-btn').forEach((b,i)=>{
+    b.disabled=true;
+    if(i===q.correct) b.className='choice-btn correct';
+    else if(i===idx) b.className='choice-btn incorrect';
+  });
+  const ok=idx===q.correct;
+  document.getElementById('explanation-box').innerHTML='<div class="explanation" style="border-color:var(--cyan)"><div class="explanation-label" style="color:var(--cyan)">'+(ok?'Correct':'Incorrect')+'</div><p>The value at X='+q.x+', Y='+q.y+' is <strong>'+q.correct_val+'</strong>. The highlighted cell shows its location in the table.</p></div>';
+  const skipBtn=document.querySelector('#ctrl-row .btn-outline');
+  if(skipBtn) skipBtn.style.display='none';
+  if(current<session.length-1) document.getElementById('btn-next').style.display='';
+  else document.getElementById('btn-finish').style.display='';
+  renderDots();
+}
+
+function doSkip() {
+  clearInterval(timerInterval);
+  if(answers[current]===null) answers[current]='skip';
+  const q=session[current];
+  document.getElementById('table-wrap').innerHTML=renderTable(q,true);
+  document.querySelectorAll('.choice-btn').forEach((b,i)=>{b.disabled=true;if(i===q.correct)b.className='choice-btn correct';});
+  document.getElementById('explanation-box').innerHTML='<div class="explanation" style="border-color:var(--cyan)"><div class="explanation-label" style="color:var(--cyan)">Skipped</div><p>The value at X='+q.x+', Y='+q.y+' is <strong>'+q.correct_val+'</strong>.</p></div>';
+  const skipBtn=document.querySelector('#ctrl-row .btn-outline');
+  if(skipBtn) skipBtn.style.display='none';
+  if(current<session.length-1) document.getElementById('btn-next').style.display='';
+  else document.getElementById('btn-finish').style.display='';
+  renderDots();
+}
+
+function doNext(){current++;renderQ();}
+
+function showResults() {
+  clearInterval(timerInterval);
+  let correct=0,incorrect=0,skipped=0;
+  answers.forEach((a,i)=>{
+    if(a===null||a==='skip') skipped++;
+    else if(a===session[i].correct) correct++;
+    else incorrect++;
+  });
+  const pct=Math.round(correct/session.length*100);
+  document.getElementById('score-pct').textContent=pct+'%';
+  document.getElementById('score-grade').textContent=pct>=90?'Lightning fast — exam ready':pct>=70?'Good accuracy — work on speed':pct>=50?'Needs practice — try timed mode':'Keep drilling — speed and accuracy both matter';
+  document.getElementById('meta-grid').innerHTML=
+    `<div class="meta-item"><span class="meta-num" style="color:var(--green)">${correct}</span><span class="meta-lbl">Correct</span></div>
+     <div class="meta-item"><span class="meta-num" style="color:var(--red)">${incorrect}</span><span class="meta-lbl">Incorrect</span></div>
+     <div class="meta-item"><span class="meta-num" style="color:var(--amber)">${skipped}</span><span class="meta-lbl">Skipped</span></div>
+     <div class="meta-item"><span class="meta-num">${session.length}</span><span class="meta-lbl">Total</span></div>`;
+  const rl=document.getElementById('review-list');
+  rl.innerHTML='';
+  session.forEach((q,i)=>{
+    const a=answers[i]; const ok=a===q.correct; const skip=a===null||a==='skip';
+    rl.innerHTML+=`<div class="review-item"><span class="review-badge ${ok?'badge-correct':skip?'badge-skipped':'badge-incorrect'}">${ok?'Correct':skip?'Skipped':'Incorrect'}</span>
+    <div class="review-q">Q${i+1}: Find value at X=${q.x}, Y=${q.y}</div>
+    ${!ok&&!skip?`<div class="review-detail">Your answer: ${q.choices[a]}</div>`:''}
+    <div class="review-detail">Correct: ${q.correct_val}</div></div>`;
+  });
+  showScreen('screen-results');
+}
+
+function restart(){beginSession();}
+</script>
+</body>
+</html>

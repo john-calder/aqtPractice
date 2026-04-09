@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Block Counting — AQT Prep</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<style>:root{--accent:var(--rose);}
+.block-display{display:flex;justify-content:center;margin-bottom:1.5rem;}
+</style>
+</head>
+<body>
+<nav>
+  <a href="index.html" class="nav-logo"><div class="dot" style="background:var(--rose)"></div>AQT PREP</a>
+  <div class="nav-right">
+    <span class="nav-section-label" style="border-color:var(--rose);color:var(--rose);">05 · Block Counting</span>
+    <a href="index.html" class="nav-back">← Home</a>
+  </div>
+</nav>
+
+<div class="page-wrap">
+  <div class="screen active" id="screen-start">
+    <div class="section-header">
+      <div class="section-eyebrow" style="color:var(--rose);">Section 05</div>
+      <h1>Block Counting</h1>
+      <p>Look at a numbered block in a 3D stack. Count how many other blocks it directly touches (shares a face with). This tests 3D spatial reasoning — a key skill for aviators.</p>
+    </div>
+    <div class="settings-panel">
+      <div class="setting-group"><span class="setting-label">Questions</span>
+        <select id="sel-count"><option value="10">10 questions</option><option value="20" selected>20 questions</option></select></div>
+      <div class="setting-group"><span class="setting-label">Time per question</span>
+        <select id="sel-time"><option value="0">No limit</option><option value="10">10 seconds</option><option value="15" selected>15 seconds</option><option value="20">20 seconds</option></select></div>
+      <button class="btn" style="background:var(--rose);color:#fff;font-family:var(--font-display);font-weight:700;font-size:13px;letter-spacing:0.06em;text-transform:uppercase;padding:10px 24px;border:none;cursor:pointer;" onclick="beginSession()">Begin</button>
+    </div>
+    <div style="font-family:var(--font-mono);font-size:11px;color:var(--text-muted);line-height:1.8;">
+      <div>RULES</div>
+      <div style="color:var(--text-dim);margin-top:4px;">A block "touches" another only if they share a full face — not edges or corners. Count all 6 possible directions: front, back, left, right, top, bottom. Touching the ground does NOT count as a block.</div>
+    </div>
+  </div>
+
+  <div class="screen" id="screen-quiz">
+    <div class="progress-wrap">
+      <div class="progress-track"><div class="progress-fill" id="progress-bar" style="width:0%;background:var(--rose)"></div></div>
+      <span id="q-counter">1 / 20</span>
+    </div>
+    <div id="timer-wrap" style="display:none;">
+      <div class="tbar-track"><div class="tbar-fill" id="timer-bar" style="width:100%;background:var(--rose)"></div></div>
+      <span id="timer-display">15s</span>
+    </div>
+    <div class="dot-tracker" id="dot-tracker"></div>
+    <div class="quiz-card">
+      <div style="font-family:var(--font-mono);font-size:11px;color:var(--text-muted);margin-bottom:0.5rem;" id="q-prompt">How many blocks does block <strong style="color:var(--rose)">1</strong> touch?</div>
+      <div class="block-display" id="block-display"></div>
+      <div class="choices" id="choices"></div>
+      <div id="explanation-box"></div>
+      <div class="ctrl-row" id="ctrl-row">
+        <button class="btn btn-outline" onclick="doSkip()">Skip</button>
+        <button class="btn" id="btn-next" onclick="doNext()" style="display:none;background:var(--rose);color:#fff;font-family:var(--font-display);font-weight:700;font-size:13px;text-transform:uppercase;padding:10px 24px;border:none;cursor:pointer;">Next</button>
+        <button class="btn" id="btn-finish" onclick="showResults()" style="display:none;background:var(--rose);color:#fff;font-family:var(--font-display);font-weight:700;font-size:13px;text-transform:uppercase;padding:10px 24px;border:none;cursor:pointer;">View Results</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="screen" id="screen-results">
+    <div class="results-header">
+      <div class="section-eyebrow" style="color:var(--rose);">Session complete</div>
+      <div class="score-big" id="score-pct" style="color:var(--rose);">0%</div>
+      <div class="score-label" id="score-grade"></div>
+    </div>
+    <div class="meta-grid" id="meta-grid"></div>
+    <div class="review-section"><h2>Full Review</h2><div id="review-list"></div></div>
+    <div class="ctrl-row" style="margin-top:2rem;">
+      <button class="btn" style="background:var(--rose);color:#fff;font-family:var(--font-display);font-weight:700;font-size:13px;text-transform:uppercase;padding:10px 24px;border:none;cursor:pointer;" onclick="restart()">Try Again</button>
+      <a href="index.html" class="btn btn-outline">← All Sections</a>
+    </div>
+  </div>
+</div>
+
+<script>
+// Each question: a set of blocks with [x,y,z] positions (z=height), the target block number, and the answer
+// We draw isometric-ish SVG
+
+// Pre-defined block arrangements [array of {x,y,z} positions, target block index (1-based), answer]
+const ARRANGEMENTS = [
+  { blocks:[[0,0,0],[1,0,0],[2,0,0],[1,0,1],[1,1,0]], target:2, answer:4, explanation:"Block 2 (center bottom) touches: block 1 (left), block 3 (right), block 4 (on top), and block 5 (front) = 4 blocks." },
+  { blocks:[[0,0,0],[1,0,0],[0,1,0],[1,1,0],[0,0,1]], target:1, answer:3, explanation:"Block 1 (front-left bottom) touches: block 2 (right), block 3 (behind), and block 5 (on top) = 3 blocks." },
+  { blocks:[[0,0,0],[0,0,1],[0,0,2],[1,0,0],[0,1,0]], target:2, answer:2, explanation:"Block 2 (middle of stack) touches: block 1 (below) and block 3 (above) = 2 blocks." },
+  { blocks:[[0,0,0],[1,0,0],[2,0,0],[0,1,0],[1,1,0],[2,1,0]], target:2, answer:3, explanation:"Block 2 (front-center) touches: block 1 (left), block 3 (right), and block 5 (behind) = 3 blocks." },
+  { blocks:[[0,0,0],[1,0,0],[1,1,0],[1,0,1],[0,1,0]], target:2, answer:4, explanation:"Block 2 touches: block 1 (left), block 3 (behind), block 4 (above), and the right face is open. Also block 5 shares no face with block 2 directly. Count: blocks 1, 3, 4 = 3." },
+  { blocks:[[0,0,0],[1,0,0],[0,0,1],[1,0,1],[0,1,0],[1,1,0]], target:3, answer:3, explanation:"Block 3 (top-left-front) touches: block 1 (below), block 4 (right), and block 5 (behind at same level, no — block 5 is at y=1 z=0 not adjacent). Actually touches block 1 (below) and block 4 (right) = 2 blocks." },
+  { blocks:[[1,0,0],[0,0,0],[2,0,0],[1,1,0],[1,0,1]], target:1, answer:4, explanation:"Block 1 (center) touches: block 2 (left), block 3 (right), block 4 (behind), block 5 (above) = 4 blocks." },
+  { blocks:[[0,0,0],[1,0,0],[0,1,0],[1,1,0],[0,0,1],[1,1,1]], target:5, answer:2, explanation:"Block 5 (top-left) touches: block 1 (below) and block 6 (diagonally above-right does not share a face). Touches block 1 below = 1. Hmm — also check right (1,0,1)=not a block, behind (0,1,1)=not present. Answer = 1." },
+  { blocks:[[0,0,0],[1,0,0],[2,0,0],[1,0,1],[0,0,1],[2,0,1]], target:4, answer:3, explanation:"Block 4 (top-center) touches: block 2 (below), block 5 (left), block 6 (right) = 3 blocks." },
+  { blocks:[[0,0,0],[0,1,0],[0,2,0],[1,0,0],[1,1,0]], target:2, answer:3, explanation:"Block 2 (middle of front column) touches: block 1 (below in y-direction? No — y is depth here). Block 2 at (0,1,0) touches block 1 at (0,0,0) [front], block 3 at (0,2,0) [behind], and block 5 at (1,1,0) [right] = 3 blocks." },
+];
+
+// Use curated questions but also generate some
+function posKey(x,y,z){return x+','+y+','+z;}
+
+function countTouches(blocks, targetIdx) {
+  const pos = blocks[targetIdx];
+  const posSet = new Set(blocks.map(b=>posKey(b[0],b[1],b[2])));
+  const dirs = [[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]];
+  let count=0;
+  dirs.forEach(([dx,dy,dz])=>{
+    const key=posKey(pos[0]+dx,pos[1]+dy,pos[2]+dz);
+    if(posSet.has(key)) count++;
+  });
+  return count;
+}
+
+// Isometric drawing
+function drawBlocks(blockArr, targetIdx) {
+  const iso = { sx:28, sy:14, sz:28 }; // scale
+  const W=280, H=200;
+  const ox=W/2-20, oy=H-30;
+
+  function isoProject(x,y,z){
+    return {
+      px: ox + (x-y)*iso.sx,
+      py: oy - z*iso.sz + (x+y)*iso.sy
+    };
+  }
+
+  // Sort by render order (back to front, bottom to top)
+  const sorted = blockArr.map((b,i)=>({x:b[0],y:b[1],z:b[2],i}))
+    .sort((a,b)=>( (a.x+a.y) - (b.x+b.y) ) || (a.z-b.z));
+
+  let svg = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" style="overflow:visible">`;
+
+  sorted.forEach(({x,y,z,i})=>{
+    const isTarget = i===targetIdx;
+    const topColor = isTarget?'#f87171':'#2a3550';
+    const leftColor = isTarget?'#c94040':'#1a2235';
+    const rightColor = isTarget?'#e06060':'#222f45';
+    const strokeColor = isTarget?'#ff8888':'#3a4f70';
+
+    const p = {
+      top_tl: isoProject(x,y,z+1),
+      top_tr: isoProject(x+1,y,z+1),
+      top_br: isoProject(x+1,y+1,z+1),
+      top_bl: isoProject(x,y+1,z+1),
+      bot_tl: isoProject(x,y,z),
+      bot_tr: isoProject(x+1,y,z),
+      bot_br: isoProject(x+1,y+1,z),
+      bot_bl: isoProject(x,y+1,z),
+    };
+    const pt = (p)=>`${p.px.toFixed(1)},${p.py.toFixed(1)}`;
+
+    // Top face
+    svg+=`<polygon points="${pt(p.top_tl)} ${pt(p.top_tr)} ${pt(p.top_br)} ${pt(p.top_bl)}" fill="${topColor}" stroke="${strokeColor}" stroke-width="0.5"/>`;
+    // Left face (front-left)
+    svg+=`<polygon points="${pt(p.top_tl)} ${pt(p.top_bl)} ${pt(p.bot_bl)} ${pt(p.bot_tl)}" fill="${leftColor}" stroke="${strokeColor}" stroke-width="0.5"/>`;
+    // Right face (front-right)
+    svg+=`<polygon points="${pt(p.top_bl)} ${pt(p.top_br)} ${pt(p.bot_br)} ${pt(p.bot_bl)}" fill="${rightColor}" stroke="${strokeColor}" stroke-width="0.5"/>`;
+
+    // Number label
+    const center = isoProject(x+0.5,y+0.5,z+1);
+    const labelY = center.py - 4;
+    svg+=`<text x="${center.px.toFixed(1)}" y="${labelY.toFixed(1)}" text-anchor="middle" font-size="${isTarget?13:10}" font-weight="${isTarget?700:400}" fill="${isTarget?'#fff':'rgba(255,255,255,0.5)'}" font-family="IBM Plex Mono">${i+1}</text>`;
+  });
+
+  svg+='</svg>';
+  return svg;
+}
+
+// Use curated + generate random questions
+function generateQuestion() {
+  // Pick arrangement with verified answer
+  const verifiedQ = [
+    { blocks:[[0,0,0],[1,0,0],[2,0,0],[1,0,1],[1,1,0]], target:1, answer:4, explanation:"Block 2 (center, 0-indexed=1) touches block 1 (left), block 3 (right), block 4 (above), and block 5 (front-y direction) = 4 blocks." },
+    { blocks:[[0,0,0],[1,0,0],[0,1,0],[1,1,0],[0,0,1]], target:0, answer:3, explanation:"Block 1 at corner touches: block 2 (right), block 3 (behind), block 5 (above) = 3 blocks." },
+    { blocks:[[0,0,0],[0,0,1],[0,0,2],[1,0,0],[0,1,0]], target:1, answer:2, explanation:"Block 2 (middle of vertical stack) touches block 1 (below) and block 3 (above) = 2 blocks." },
+    { blocks:[[0,0,0],[1,0,0],[2,0,0],[0,1,0],[1,1,0],[2,1,0]], target:1, answer:3, explanation:"Block 2 (front-center) touches block 1 (left), block 3 (right), block 5 (behind) = 3 blocks." },
+    { blocks:[[1,0,0],[0,0,0],[2,0,0],[1,1,0],[1,0,1]], target:0, answer:4, explanation:"Block 1 (center) touches block 2 (left), block 3 (right), block 4 (behind), block 5 (above) = 4 blocks." },
+    { blocks:[[0,0,0],[1,0,0],[0,0,1],[1,0,1]], target:2, answer:2, explanation:"Block 3 (top-left) touches block 1 (below) and block 4 (right) = 2 blocks." },
+    { blocks:[[0,0,0],[1,0,0],[2,0,0],[1,0,1],[0,0,1],[2,0,1]], target:3, answer:3, explanation:"Block 4 (top-center) touches block 2 (below), block 5 (left), block 6 (right) = 3 blocks." },
+    { blocks:[[0,0,0],[1,0,0],[0,1,0],[1,1,0]], target:0, answer:2, explanation:"Block 1 (front-left) touches block 2 (right) and block 3 (behind) = 2 blocks." },
+    { blocks:[[0,0,0],[0,0,1],[0,0,2],[0,0,3]], target:1, answer:2, explanation:"Block 2 (2nd from bottom of stack) touches block 1 (below) and block 3 (above) = 2 blocks." },
+    { blocks:[[0,0,0],[0,0,1],[0,0,2],[0,0,3]], target:0, answer:1, explanation:"Block 1 (bottom) only touches block 2 (above). The ground does not count = 1 block." },
+    { blocks:[[0,0,0],[1,0,0],[2,0,0],[0,1,0],[1,1,0],[2,1,0],[0,0,1],[1,0,1]], target:4, answer:4, explanation:"Block 5 (center, second row) touches block 4 (left), block 6 (right), block 2 (front), and block 8 (above) = 4 blocks." },
+    { blocks:[[0,0,0],[1,0,0],[2,0,0],[0,1,0],[1,1,0],[2,1,0],[0,0,1],[1,0,1]], target:7, answer:3, explanation:"Block 8 (top, front-center) touches block 2 (below), block 7 (left), and nothing to the right (2,0,1 not present). Wait — touches 7 (left) and 2 (below). Front face open, right open = 2 blocks." },
+    { blocks:[[0,0,0],[1,0,0],[1,1,0],[1,0,1]], target:1, answer:3, explanation:"Block 2 at (1,0,0) touches block 1 (left), block 3 (behind at y+1), and block 4 (above) = 3 blocks." },
+    { blocks:[[0,0,0],[0,1,0],[0,2,0],[0,0,1],[0,1,1]], target:1, answer:3, explanation:"Block 2 at (0,1,0) touches block 1 (front), block 3 (behind), and block 5 (above) = 3 blocks." },
+    { blocks:[[0,0,0],[1,0,0],[0,1,0],[0,0,1],[1,0,1],[0,1,1]], target:3, answer:3, explanation:"Block 4 at (0,0,1) touches block 1 (below), block 5 (right), block 6 (behind) = 3 blocks." },
+  ];
+
+  // Verify answer with algorithm
+  const q = verifiedQ[Math.floor(Math.random()*verifiedQ.length)];
+  const computed = countTouches(q.blocks, q.target);
+
+  const correct_val = computed; // use computed answer
+  const wrongs = new Set();
+  while(wrongs.size<3){const v=correct_val+(Math.floor(Math.random()*4)+1)*(Math.random()<0.5?1:-1);if(v>=1&&v<=6)wrongs.add(v);}
+  const allC=[correct_val,...wrongs];
+  const shuffled=shuffle(allC);
+  return {
+    blocks: q.blocks,
+    target: q.target,
+    correct_val: computed,
+    choices: shuffled.map(v=>v+' block'+(v===1?'':'s')),
+    correct: shuffled.indexOf(computed),
+    explanation: `Block ${q.target+1} touches ${computed} block${computed===1?'':'s'} based on shared faces.`
+  };
+}
+
+function shuffle(arr){const a=[...arr];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+
+let session=[],answers=[],current=0,timerInterval=null,timePerQ=15,totalQ=20;
+
+function beginSession(){
+  totalQ=parseInt(document.getElementById('sel-count').value);
+  timePerQ=parseInt(document.getElementById('sel-time').value);
+  session=[];for(let i=0;i<totalQ;i++)session.push(generateQuestion());
+  answers=new Array(totalQ).fill(null);current=0;
+  showScreen('screen-quiz');renderQ();
+}
+function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');}
+function renderDots(){const t=document.getElementById('dot-tracker');t.innerHTML='';session.forEach((_,i)=>{const d=document.createElement('div');d.className='q-dot'+(i===current?' current':answers[i]===null?'':answers[i]==='skip'?' skip':answers[i]===session[i].correct?' ok':' bad');t.appendChild(d);});}
+
+function renderQ(){
+  clearInterval(timerInterval);const q=session[current];
+  document.getElementById('progress-bar').style.width=(current/session.length*100)+'%';
+  document.getElementById('q-counter').textContent=(current+1)+' / '+session.length;
+  document.getElementById('q-prompt').innerHTML='How many blocks does block <strong style="color:var(--rose)">'+(q.target+1)+'</strong> touch?';
+  document.getElementById('block-display').innerHTML=drawBlocks(q.blocks, q.target);
+  renderDots();
+  const ch=document.getElementById('choices');ch.innerHTML='';
+  q.choices.forEach((c,i)=>{const btn=document.createElement('button');btn.className='choice-btn';btn.innerHTML='<span class="choice-letter">'+String.fromCharCode(65+i)+'</span>'+c;btn.onclick=()=>selectAnswer(i);ch.appendChild(btn);});
+  document.getElementById('explanation-box').innerHTML='';
+  document.getElementById('btn-next').style.display='none';document.getElementById('btn-finish').style.display='none';
+  const sk=document.querySelector('#ctrl-row .btn-outline');if(sk)sk.style.display='';
+  if(timePerQ>0){let left=timePerQ;document.getElementById('timer-wrap').style.display='';document.getElementById('timer-display').textContent=left+'s';document.getElementById('timer-bar').style.width='100%';
+    timerInterval=setInterval(()=>{left--;const pct=(left/timePerQ)*100;document.getElementById('timer-bar').style.width=pct+'%';document.getElementById('timer-bar').className='tbar-fill'+(pct<25?' danger':pct<50?' warn':'');document.getElementById('timer-display').textContent=left+'s';if(left<=0){clearInterval(timerInterval);doSkip(true);}},1000);
+  }else document.getElementById('timer-wrap').style.display='none';
+}
+function selectAnswer(idx){if(answers[current]!==null)return;clearInterval(timerInterval);answers[current]=idx;const q=session[current];
+  document.querySelectorAll('.choice-btn').forEach((b,i)=>{b.disabled=true;if(i===q.correct)b.className='choice-btn correct';else if(i===idx)b.className='choice-btn incorrect';});
+  document.getElementById('explanation-box').innerHTML='<div class="explanation" style="border-color:var(--rose)"><div class="explanation-label" style="color:var(--rose)">'+(idx===q.correct?'Correct':'Incorrect')+'</div><p>'+q.explanation+'</p></div>';
+  const sk=document.querySelector('#ctrl-row .btn-outline');if(sk)sk.style.display='none';
+  if(current<session.length-1)document.getElementById('btn-next').style.display='';else document.getElementById('btn-finish').style.display='';renderDots();
+}
+function doSkip(){clearInterval(timerInterval);if(answers[current]===null)answers[current]='skip';const q=session[current];
+  document.querySelectorAll('.choice-btn').forEach((b,i)=>{b.disabled=true;if(i===q.correct)b.className='choice-btn correct';});
+  document.getElementById('explanation-box').innerHTML='<div class="explanation" style="border-color:var(--rose)"><div class="explanation-label" style="color:var(--rose)">Skipped</div><p>'+q.explanation+'</p></div>';
+  const sk=document.querySelector('#ctrl-row .btn-outline');if(sk)sk.style.display='none';
+  if(current<session.length-1)document.getElementById('btn-next').style.display='';else document.getElementById('btn-finish').style.display='';renderDots();
+}
+function doNext(){current++;renderQ();}
+function showResults(){clearInterval(timerInterval);
+  let correct=0,incorrect=0,skipped=0;
+  answers.forEach((a,i)=>{if(a===null||a==='skip')skipped++;else if(a===session[i].correct)correct++;else incorrect++;});
+  const pct=Math.round(correct/session.length*100);
+  document.getElementById('score-pct').textContent=pct+'%';
+  document.getElementById('score-grade').textContent=pct>=90?'Excellent spatial reasoning':pct>=70?'Good — practice 3D visualization':pct>=50?'Keep working on spatial skills':'Study 3D block counting techniques';
+  document.getElementById('meta-grid').innerHTML=`<div class="meta-item"><span class="meta-num" style="color:var(--green)">${correct}</span><span class="meta-lbl">Correct</span></div><div class="meta-item"><span class="meta-num" style="color:var(--red)">${incorrect}</span><span class="meta-lbl">Incorrect</span></div><div class="meta-item"><span class="meta-num" style="color:var(--amber)">${skipped}</span><span class="meta-lbl">Skipped</span></div><div class="meta-item"><span class="meta-num">${session.length}</span><span class="meta-lbl">Total</span></div>`;
+  const rl=document.getElementById('review-list');rl.innerHTML='';
+  session.forEach((q,i)=>{const a=answers[i];const ok=a===q.correct,skip=a===null||a==='skip';
+    rl.innerHTML+=`<div class="review-item"><span class="review-badge ${ok?'badge-correct':skip?'badge-skipped':'badge-incorrect'}">${ok?'Correct':skip?'Skipped':'Incorrect'}</span>
+    <div class="review-q">Q${i+1}: How many blocks does block ${q.target+1} touch?</div>
+    ${!ok&&!skip?`<div class="review-detail">Your answer: ${q.choices[a]}</div>`:''}
+    <div class="review-detail">Correct: ${q.correct_val} block${q.correct_val===1?'':'s'}</div>
+    <div class="review-exp">${q.explanation}</div></div>`;});
+  showScreen('screen-results');
+}
+function restart(){beginSession();}
+</script>
+</body>
+</html>

@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Full Practice Test — AQT Prep</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<style>
+  :root{--accent:var(--amber);}
+  .section-cards{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--border);margin-bottom:2rem;}
+  @media(max-width:500px){.section-cards{grid-template-columns:1fr;}}
+  .section-mini{background:var(--bg2);padding:1rem 1.25rem;display:flex;align-items:center;gap:10px;}
+  .mini-dot{width:8px;height:8px;border-radius:50%;}
+  .mini-label{font-family:var(--font-display);font-size:14px;font-weight:600;}
+  .mini-meta{font-family:var(--font-mono);font-size:10px;color:var(--text-muted);margin-left:auto;}
+  .score-section{display:flex;align-items:center;justify-content:space-between;padding:1rem 0;border-bottom:1px solid var(--border);}
+  .score-section-label{font-family:var(--font-mono);font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.1em;}
+  .score-section-pct{font-family:var(--font-display);font-size:22px;font-weight:700;}
+  .score-bar-wrap{flex:1;margin:0 1.5rem;height:4px;background:var(--border-bright);}
+  .score-bar-fill{height:100%;border-radius:2px;}
+</style>
+</head>
+<body>
+<nav>
+  <a href="index.html" class="nav-logo"><div class="dot"></div>AQT PREP</a>
+  <div class="nav-right">
+    <span class="nav-section-label">Full Practice Test</span>
+    <a href="index.html" class="nav-back">← Home</a>
+  </div>
+</nav>
+
+<div class="page-wrap">
+
+  <!-- START -->
+  <div class="screen active" id="screen-start">
+    <div class="section-header">
+      <div class="section-eyebrow">Complete Simulation</div>
+      <h1>Full Practice Test</h1>
+      <p>All five sections back-to-back, timed just like the real AQT. Complete every section to see a full score breakdown at the end.</p>
+    </div>
+    <div class="section-cards">
+      <div class="section-mini"><div class="mini-dot" style="background:#f5a623"></div><span class="mini-label">Math</span><span class="mini-meta">25q · 22min</span></div>
+      <div class="section-mini"><div class="mini-dot" style="background:#00d4d4"></div><span class="mini-label">Table Reading</span><span class="mini-meta">40q · 7min</span></div>
+      <div class="section-mini"><div class="mini-dot" style="background:#a78bfa"></div><span class="mini-label">Aviation Info</span><span class="mini-meta">20q · 8min</span></div>
+      <div class="section-mini"><div class="mini-dot" style="background:#34d399"></div><span class="mini-label">Instrument Comp.</span><span class="mini-meta">20q · 6min</span></div>
+      <div class="section-mini"><div class="mini-dot" style="background:#f87171"></div><span class="mini-label">Block Counting</span><span class="mini-meta">20q · 3min</span></div>
+    </div>
+    <div class="settings-panel">
+      <div class="setting-group"><span class="setting-label">Mode</span>
+        <select id="sel-mode">
+          <option value="timed">Timed (real AQT timing)</option>
+          <option value="relaxed">Relaxed (no time limit)</option>
+          <option value="quick">Quick (10 questions each)</option>
+        </select>
+      </div>
+      <button class="btn btn-amber" onclick="startTest()">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><polygon points="2,1 13,7 2,13" fill="currentColor"/></svg>
+        Start Test
+      </button>
+    </div>
+  </div>
+
+  <!-- SECTION TRANSITION -->
+  <div class="screen" id="screen-transition">
+    <div style="text-align:center;padding:4rem 0;">
+      <div style="font-family:var(--font-mono);font-size:11px;color:var(--text-muted);letter-spacing:0.2em;text-transform:uppercase;margin-bottom:1rem;" id="trans-label">Next Section</div>
+      <div style="font-family:var(--font-display);font-size:42px;font-weight:800;letter-spacing:-0.03em;margin-bottom:0.5rem;" id="trans-title">Math</div>
+      <div style="font-family:var(--font-mono);font-size:13px;color:var(--text-muted);margin-bottom:3rem;" id="trans-meta"></div>
+      <button class="btn btn-amber" onclick="beginCurrentSection()">Begin Section →</button>
+    </div>
+  </div>
+
+  <!-- QUIZ -->
+  <div class="screen" id="screen-quiz">
+    <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1rem;">
+      <div style="font-family:var(--font-mono);font-size:10px;letter-spacing:0.15em;text-transform:uppercase;padding:3px 8px;border:1px solid var(--accent);" id="section-badge" style="color:var(--accent)">Section</div>
+      <div class="progress-track" style="flex:1;"><div class="progress-fill" id="progress-bar" style="width:0%"></div></div>
+      <span id="q-counter" style="font-family:var(--font-mono);font-size:12px;color:var(--text-muted);">1/20</span>
+    </div>
+    <div id="timer-wrap" style="display:none;">
+      <div class="tbar-track"><div class="tbar-fill" id="timer-bar" style="width:100%"></div></div>
+      <span id="timer-display">30s</span>
+    </div>
+    <div class="dot-tracker" id="dot-tracker"></div>
+    <div class="quiz-card">
+      <div id="q-category" style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted);letter-spacing:0.15em;text-transform:uppercase;margin-bottom:0.75rem;"></div>
+      <div id="q-extra"></div>
+      <div class="question-text" id="q-text"></div>
+      <div class="choices" id="choices"></div>
+      <div id="explanation-box"></div>
+      <div class="ctrl-row" id="ctrl-row">
+        <button class="btn btn-outline" id="btn-skip" onclick="doSkip()">Skip</button>
+        <button class="btn btn-amber" id="btn-next" onclick="doNext()" style="display:none;">Next</button>
+        <button class="btn btn-amber" id="btn-end-section" onclick="endSection()" style="display:none;">End Section →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- RESULTS -->
+  <div class="screen" id="screen-results">
+    <div class="results-header">
+      <div class="section-eyebrow">Test Complete</div>
+      <div class="score-big" id="score-pct" style="color:var(--amber)">—</div>
+      <div class="score-label" id="score-grade"></div>
+    </div>
+    <div style="margin-bottom:2rem;" id="section-scores"></div>
+    <div class="review-section"><h2>Full Review</h2><div id="review-list"></div></div>
+    <div class="ctrl-row" style="margin-top:2rem;">
+      <button class="btn btn-amber" onclick="location.reload()">New Test</button>
+      <a href="index.html" class="btn btn-outline">← Home</a>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ---- Data ----
+const MATH_Q = [
+  {cat:"Math",text:"What is 15% of 240?",choices:["30","34","36","38"],correct:2,explanation:"15% of 240 = 0.15 × 240 = 36."},
+  {cat:"Math",text:"A pilot flies 360 miles in 3 hours. What is average speed?",choices:["100 mph","110 mph","120 mph","130 mph"],correct:2,explanation:"360 ÷ 3 = 120 mph."},
+  {cat:"Math",text:"Simplify: 3/4 + 1/6",choices:["4/10","11/12","5/12","7/10"],correct:1,explanation:"LCD=12: 9/12+2/12=11/12."},
+  {cat:"Math",text:"If x − 7 = 15, what is x?",choices:["8","18","22","25"],correct:2,explanation:"x = 22."},
+  {cat:"Math",text:"What is 2³ × 2²?",choices:["10","16","32","64"],correct:2,explanation:"2^5 = 32."},
+  {cat:"Math",text:"A fuel tank holds 450 gallons. If 2/3 full, how many gallons?",choices:["150","225","300","315"],correct:2,explanation:"2/3 × 450 = 300."},
+  {cat:"Math",text:"What is √196?",choices:["12","13","14","15"],correct:2,explanation:"14 × 14 = 196."},
+  {cat:"Math",text:"Solve: 5x + 3 = 28",choices:["x = 4","x = 5","x = 6","x = 7"],correct:1,explanation:"5x=25, x=5."},
+  {cat:"Math",text:"Aircraft burns 8.5 gal/hr. Fuel used in 4.5 hours?",choices:["36.5 gal","38 gal","38.25 gal","40 gal"],correct:2,explanation:"8.5 × 4.5 = 38.25."},
+  {cat:"Math",text:"What is 125% of 80?",choices:["90","100","105","110"],correct:1,explanation:"1.25 × 80 = 100."},
+];
+const AVINFO_Q = [
+  {cat:"Aviation Info",text:"What are the four forces on an aircraft in level flight?",choices:["Lift, weight, thrust, drag","Lift, gravity, power, friction","Velocity, mass, lift, thrust","Pressure, lift, drag, inertia"],correct:0,explanation:"Lift, weight (gravity), thrust, and drag are the four aerodynamic forces."},
+  {cat:"Aviation Info",text:"What happens when the critical angle of attack is exceeded?",choices:["Lift doubles","A stall occurs","Aircraft speeds up","Drag decreases"],correct:1,explanation:"Exceeding the critical AOA causes airflow separation — a stall."},
+  {cat:"Aviation Info",text:"Which control surface primarily controls roll?",choices:["Elevator","Rudder","Ailerons","Flaps"],correct:2,explanation:"Ailerons control roll by creating differential lift between wings."},
+  {cat:"Aviation Info",text:"Class A airspace floor in the continental US is:",choices:["14,500 ft MSL","18,000 ft MSL","24,000 ft MSL","FL600"],correct:1,explanation:"Class A begins at 18,000 ft MSL (FL180)."},
+  {cat:"Aviation Info",text:"What causes induced drag?",choices:["Skin friction","Lift production","Landing gear","Propeller slipstream"],correct:1,explanation:"Induced drag is a byproduct of lift generation — wingtip vortices create rearward force."},
+  {cat:"Aviation Info",text:"Under FAR 91.3, the PIC is responsible for:",choices:["ATC routing","Safe aircraft operation","Maintenance scheduling","Fuel calculations"],correct:1,explanation:"FAR 91.3 makes the PIC the final authority for safe operation."},
+  {cat:"Aviation Info",text:"What does a cumulonimbus cloud indicate?",choices:["Stable smooth air","Severe turbulence and icing","Fog only","Light turbulence"],correct:1,explanation:"CB clouds indicate thunderstorm conditions — severe turbulence, icing, hail."},
+  {cat:"Aviation Info",text:"What is the purpose of RAIM in GPS?",choices:["Amplify signal","Check signal integrity","Terrain warnings","Wind correction"],correct:1,explanation:"RAIM monitors GPS integrity and alerts when accuracy is insufficient."},
+  {cat:"Aviation Info",text:"Wind shear is most hazardous during:",choices:["Cruise","Takeoff and landing","Taxiing","Engine runup"],correct:1,explanation:"Wind shear near ground during takeoff/landing leaves little margin for recovery."},
+  {cat:"Aviation Info",text:"What does a SIGMET describe?",choices:["Routine briefing","Hazardous meteorological phenomena","Pilot weather report","Terminal forecast"],correct:1,explanation:"SIGMETs describe conditions hazardous to all aircraft: severe turbulence, icing, volcanic ash."},
+];
+
+function makeTRQuestion() {
+  const xVals=[-3,-2,-1,0,1,2,3], yVals=[-3,-2,-1,0,1,2,3];
+  const xi=Math.floor(Math.random()*xVals.length), yi=Math.floor(Math.random()*yVals.length);
+  const x=xVals[xi], y=yVals[yi];
+  const val=(y*7)+(x*3)+50;
+  const wrongs=new Set();
+  while(wrongs.size<3){const v=val+(Math.floor(Math.random()*10)+1)*(Math.random()<0.5?1:-1);wrongs.add(v);}
+  const all=shuffle([val,...wrongs]);
+  return {cat:"Table Reading",x,y,correct_val:val,choices:all.map(v=>String(v)),correct:all.indexOf(val),isTableQ:true,xi,yi,explanation:`X=${x}, Y=${y} → value is ${val}.`};
+}
+
+function makeICQuestion(){
+  const pitches=[-10,-5,0,5,10],banks=[-30,-15,0,15,30],hdgs=[0,45,90,135,180,225,270,315];
+  const p=pitches[Math.floor(Math.random()*pitches.length)];
+  const b=banks[Math.floor(Math.random()*banks.length)];
+  const h=hdgs[Math.floor(Math.random()*hdgs.length)];
+  const pitchL=p===0?'level pitch':p>0?p+'° nose up':Math.abs(p)+'° nose down';
+  const bankL=b===0?'wings level':b>0?b+'° right bank':Math.abs(b)+'° left bank';
+  const hdgL={0:'North',45:'NE (045°)',90:'East',135:'SE (135°)',180:'South',225:'SW (225°)',270:'West',315:'NW (315°)'}[h]||h+'°';
+  const correct_text=`${pitchL}, ${bankL}, heading ${hdgL}`;
+  const pool=[];
+  pitches.forEach(pp=>banks.forEach(bb=>hdgs.forEach(hh=>{
+    const pl=pp===0?'level pitch':pp>0?pp+'° nose up':Math.abs(pp)+'° nose down';
+    const bl=bb===0?'wings level':bb>0?bb+'° right bank':Math.abs(bb)+'° left bank';
+    const hl={0:'North',45:'NE (045°)',90:'East',135:'SE (135°)',180:'South',225:'SW (225°)',270:'West',315:'NW (315°)'}[hh]||hh+'°';
+    const t=`${pl}, ${bl}, heading ${hl}`;
+    if(t!==correct_text)pool.push(t);
+  })));
+  const wrong=shuffle(pool).slice(0,3);
+  const all=shuffle([correct_text,...wrong]);
+  return {cat:"Instrument",pitch:p,bank:b,heading:h,correct_text,choices:all,correct:all.indexOf(correct_text),isInstrument:true,explanation:`Attitude indicator shows ${pitchL} and ${bankL}. Heading indicator shows ${hdgL}.`};
+}
+
+function makeBCQuestion(){
+  const scenarios=[
+    {blocks:[[1,0,0],[0,0,0],[2,0,0],[1,1,0],[1,0,1]],target:0},
+    {blocks:[[0,0,0],[1,0,0],[0,1,0],[1,1,0],[0,0,1]],target:0},
+    {blocks:[[0,0,0],[0,0,1],[0,0,2],[1,0,0],[0,1,0]],target:1},
+    {blocks:[[0,0,0],[1,0,0],[2,0,0],[1,0,1],[0,0,1],[2,0,1]],target:3},
+    {blocks:[[0,0,0],[1,0,0],[1,1,0],[1,0,1]],target:1},
+  ];
+  const sc=scenarios[Math.floor(Math.random()*scenarios.length)];
+  const posSet=new Set(sc.blocks.map(b=>b[0]+','+b[1]+','+b[2]));
+  const dirs=[[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]];
+  const pos=sc.blocks[sc.target];
+  let count=0;
+  dirs.forEach(([dx,dy,dz])=>{if(posSet.has((pos[0]+dx)+','+(pos[1]+dy)+','+(pos[2]+dz)))count++;});
+  const wrongs=new Set();
+  while(wrongs.size<3){const v=count+(Math.floor(Math.random()*3)+1)*(Math.random()<0.5?1:-1);if(v>=1&&v<=6)wrongs.add(v);}
+  const all=shuffle([count,...wrongs]);
+  return {cat:"Block Counting",blocks:sc.blocks,target:sc.target,correct_val:count,choices:all.map(v=>v+' block'+(v===1?'':'s')),correct:all.indexOf(count),isBlock:true,explanation:`Block ${sc.target+1} touches ${count} adjacent block${count===1?'':'s'}.`};
+}
+
+function shuffle(arr){const a=[...arr];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+
+// ---- Test State ----
+const SECTIONS = [
+  {name:'Math', color:'#f5a623', timePerQ:52, questions:null, count:10},
+  {name:'Table Reading', color:'#00d4d4', timePerQ:10, questions:null, count:10},
+  {name:'Aviation Info', color:'#a78bfa', timePerQ:24, questions:null, count:10},
+  {name:'Instrument Comprehension', color:'#34d399', timePerQ:18, questions:null, count:10},
+  {name:'Block Counting', color:'#f87171', timePerQ:9, questions:null, count:10},
+];
+
+let mode='timed', sectionIdx=0, currentQ=0, sectionAnswers=[], allResults=[], timerInterval=null;
+
+function startTest(){
+  mode=document.getElementById('sel-mode').value;
+  const qCounts=mode==='quick'?[10,10,10,10,10]:[25,40,20,20,20];
+  const tpq=mode==='relaxed'?[0,0,0,0,0]:[52,10,24,18,9];
+
+  SECTIONS[0].questions=shuffle(MATH_Q).slice(0,qCounts[0]);
+  const trQs=[];for(let i=0;i<qCounts[1];i++)trQs.push(makeTRQuestion());SECTIONS[1].questions=trQs;
+  SECTIONS[2].questions=shuffle(AVINFO_Q).slice(0,qCounts[2]);
+  const icQs=[];for(let i=0;i<qCounts[3];i++)icQs.push(makeICQuestion());SECTIONS[3].questions=icQs;
+  const bcQs=[];for(let i=0;i<qCounts[4];i++)bcQs.push(makeBCQuestion());SECTIONS[4].questions=bcQs;
+
+  SECTIONS.forEach((s,i)=>{s.count=qCounts[i];s.timePerQ=tpq[i];});
+  sectionIdx=0;allResults=[];
+  showTransition();
+}
+
+function showTransition(){
+  if(sectionIdx>=SECTIONS.length){showResults();return;}
+  const sec=SECTIONS[sectionIdx];
+  document.getElementById('trans-label').textContent='Section '+(sectionIdx+1)+' of '+SECTIONS.length;
+  document.getElementById('trans-title').textContent=sec.name;
+  document.getElementById('trans-title').style.color=sec.color;
+  document.getElementById('trans-meta').textContent=sec.count+' questions'+(sec.timePerQ?` · ${sec.timePerQ}s per question`:'');
+  showScreen('screen-transition');
+}
+
+function beginCurrentSection(){
+  const sec=SECTIONS[sectionIdx];
+  sectionAnswers=new Array(sec.questions.length).fill(null);
+  currentQ=0;
+  document.getElementById('section-badge').textContent=sec.name;
+  document.getElementById('section-badge').style.color=sec.color;
+  document.getElementById('section-badge').style.borderColor=sec.color;
+  document.getElementById('progress-bar').style.background=sec.color;
+  document.getElementById('timer-bar').style.background=sec.color;
+  showScreen('screen-quiz');
+  renderQ2();
+}
+
+// Isometric block drawing (simplified inline)
+function drawAI2(pitch,bank){const cx=80,cy=80,R=70,pitchPx=pitch*2,bankRad=bank*Math.PI/180;return`<svg width="160" height="160" viewBox="0 0 160 160"><defs><clipPath id="ai-c2"><circle cx="${cx}" cy="${cy}" r="${R}"/></clipPath></defs><g clip-path="url(#ai-c2)"><rect x="0" y="0" width="160" height="160" fill="#1a3a6b"/><g transform="rotate(${bank},${cx},${cy})"><rect x="${cx-120}" y="${cy-pitchPx}" width="240" height="160" fill="#6b3d1e"/><line x1="${cx-120}" y1="${cy-pitchPx}" x2="${cx+120}" y2="${cy-pitchPx}" stroke="#fff" stroke-width="2"/></g></g><circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="#333" stroke-width="6"/><circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="#555" stroke-width="1"/><g transform="rotate(${bank},${cx},${cy})"><polygon points="${cx},${cy-R+14} ${cx-5},${cy-R+22} ${cx+5},${cy-R+22}" fill="#fff"/></g><line x1="${cx-20}" y1="${cy}" x2="${cx-6}" y2="${cy}" stroke="#f5a623" stroke-width="3"/><line x1="${cx+6}" y1="${cy}" x2="${cx+20}" y2="${cy}" stroke="#f5a623" stroke-width="3"/><circle cx="${cx}" cy="${cy}" r="3" fill="#f5a623"/></svg>`;}
+function drawHI2(heading){const cx=80,cy=80,R=70;const h2=[{l:'N',d:0},{l:'E',d:90},{l:'S',d:180},{l:'W',d:270}];return`<svg width="160" height="160" viewBox="0 0 160 160"><circle cx="${cx}" cy="${cy}" r="${R}" fill="#111" stroke="#555" stroke-width="4"/><g transform="rotate(${-heading},${cx},${cy})">${h2.map(h=>{const rad=h.d*Math.PI/180;const tx=cx+Math.sin(rad)*(R-22),ty=cy-Math.cos(rad)*(R-22)+4;return`<text x="${tx.toFixed(1)}" y="${ty.toFixed(1)}" text-anchor="middle" font-size="13" fill="${h.l==='N'?'#e84040':'#fff'}" font-family="IBM Plex Mono">${h.l}</text>`;}).join('')}</g><polygon points="${cx},${cy-R+2} ${cx-5},${cy-R+12} ${cx+5},${cy-R+12}" fill="#f5a623"/><circle cx="${cx}" cy="${cy}" r="3" fill="#888"/></svg>`;}
+function drawBlocks2(blockArr,targetIdx){const iso={sx:28,sy:14,sz:28};const W=280,H=200,ox=W/2-20,oy=H-30;function ip(x,y,z){return{px:ox+(x-y)*iso.sx,py:oy-z*iso.sz+(x+y)*iso.sy};}const sorted=[...blockArr.map((b,i)=>({x:b[0],y:b[1],z:b[2],i}))].sort((a,b)=>((a.x+a.y)-(b.x+b.y))||(a.z-b.z));let svg=`<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" style="overflow:visible">`;sorted.forEach(({x,y,z,i})=>{const it=i===targetIdx;const tc=it?'#f87171':'#2a3550',lc=it?'#c94040':'#1a2235',rc=it?'#e06060':'#222f45',sc=it?'#ff8888':'#3a4f70';const p={t_tl:ip(x,y,z+1),t_tr:ip(x+1,y,z+1),t_br:ip(x+1,y+1,z+1),t_bl:ip(x,y+1,z+1),b_tl:ip(x,y,z),b_tr:ip(x+1,y,z),b_br:ip(x+1,y+1,z),b_bl:ip(x,y+1,z)};const pt=p=>`${p.px.toFixed(1)},${p.py.toFixed(1)}`;svg+=`<polygon points="${pt(p.t_tl)} ${pt(p.t_tr)} ${pt(p.t_br)} ${pt(p.t_bl)}" fill="${tc}" stroke="${sc}" stroke-width="0.5"/>`;svg+=`<polygon points="${pt(p.t_tl)} ${pt(p.t_bl)} ${pt(p.b_bl)} ${pt(p.b_tl)}" fill="${lc}" stroke="${sc}" stroke-width="0.5"/>`;svg+=`<polygon points="${pt(p.t_bl)} ${pt(p.t_br)} ${pt(p.b_br)} ${pt(p.b_bl)}" fill="${rc}" stroke="${sc}" stroke-width="0.5"/>`;const center=ip(x+0.5,y+0.5,z+1);svg+=`<text x="${center.px.toFixed(1)}" y="${(center.py-4).toFixed(1)}" text-anchor="middle" font-size="${it?13:10}" font-weight="${it?700:400}" fill="${it?'#fff':'rgba(255,255,255,0.5)'}" font-family="IBM Plex Mono">${i+1}</text>`;});svg+='</svg>';return svg;}
+
+// Table rendering for TR questions
+function makeTable2(q){const xVals=[-3,-2,-1,0,1,2,3],yVals=[-3,-2,-1,0,1,2,3];function val(y,x){return(y*7)+(x*3)+50;}let html='<div style="overflow-x:auto;font-size:11px;"><table class="lookup-table"><thead><tr><th>Y\\X</th>';xVals.forEach(x=>{html+=`<th>${x}</th>`;});html+='</tr></thead><tbody>';yVals.forEach((y,ri)=>{html+=`<tr><th>${y}</th>`;xVals.forEach((x,ci)=>{html+=`<td>${val(y,x)}</td>`;});html+='</tr>';});html+='</tbody></table></div>';return html;}
+
+function renderQ2(){
+  clearInterval(timerInterval);
+  const sec=SECTIONS[sectionIdx];
+  const q=sec.questions[currentQ];
+  document.getElementById('progress-bar').style.width=(currentQ/sec.questions.length*100)+'%';
+  document.getElementById('q-counter').textContent=(currentQ+1)+' / '+sec.questions.length;
+  document.getElementById('q-category').textContent=q.cat||'';
+  renderDots2();
+
+  const extra=document.getElementById('q-extra');
+  if(q.isTableQ){
+    extra.innerHTML='<div class="lookup-prompt" style="border-color:var(--cyan);font-family:var(--font-mono);font-size:13px;color:var(--text);margin-bottom:0.75rem;padding:0.5rem 0.75rem;">Find value at X = '+q.x+', Y = '+q.y+'</div>'+makeTable2(q);
+    document.getElementById('q-text').textContent='';
+  } else if(q.isInstrument){
+    extra.innerHTML='<div style="display:flex;justify-content:center;gap:2rem;margin-bottom:1rem;flex-wrap:wrap;"><div style="text-align:center">'+drawAI2(q.pitch,q.bank)+'<div style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted);margin-top:4px;letter-spacing:0.1em;text-transform:uppercase;">Attitude Indicator</div></div><div style="text-align:center">'+drawHI2(q.heading)+'<div style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted);margin-top:4px;letter-spacing:0.1em;text-transform:uppercase;">Heading Indicator</div></div></div>';
+    document.getElementById('q-text').textContent='Select the correct description of the aircraft\'s attitude and heading:';
+  } else if(q.isBlock){
+    extra.innerHTML='<div style="display:flex;justify-content:center;margin-bottom:1rem;">'+drawBlocks2(q.blocks,q.target)+'</div>';
+    document.getElementById('q-text').textContent='How many blocks does block '+(q.target+1)+' touch?';
+  } else {
+    extra.innerHTML='';
+    document.getElementById('q-text').textContent=q.text;
+  }
+
+  const ch=document.getElementById('choices');ch.innerHTML='';
+  q.choices.forEach((c,i)=>{const btn=document.createElement('button');btn.className='choice-btn';btn.innerHTML='<span class="choice-letter">'+String.fromCharCode(65+i)+'</span>'+c;btn.onclick=()=>selectA2(i);ch.appendChild(btn);});
+  document.getElementById('explanation-box').innerHTML='';
+  document.getElementById('btn-next').style.display='none';
+  document.getElementById('btn-end-section').style.display='none';
+  document.getElementById('btn-skip').style.display='';
+
+  if(sec.timePerQ>0){
+    let left=sec.timePerQ;
+    document.getElementById('timer-wrap').style.display='';
+    document.getElementById('timer-display').textContent=left+'s';
+    document.getElementById('timer-bar').style.width='100%';
+    timerInterval=setInterval(()=>{
+      left--;
+      const pct=(left/sec.timePerQ)*100;
+      document.getElementById('timer-bar').style.width=pct+'%';
+      document.getElementById('timer-bar').className='tbar-fill'+(pct<25?' danger':pct<50?' warn':'');
+      document.getElementById('timer-display').textContent=left+'s';
+      if(left<=0){clearInterval(timerInterval);doSkip2(true);}
+    },1000);
+  } else document.getElementById('timer-wrap').style.display='none';
+}
+
+function renderDots2(){const t=document.getElementById('dot-tracker');t.innerHTML='';const sec=SECTIONS[sectionIdx];sec.questions.forEach((_,i)=>{const d=document.createElement('div');d.className='q-dot'+(i===currentQ?' current':sectionAnswers[i]===null?'':sectionAnswers[i]==='skip'?' skip':sectionAnswers[i]===sec.questions[i].correct?' ok':' bad');t.appendChild(d);});}
+
+function selectA2(idx){
+  if(sectionAnswers[currentQ]!==null)return;
+  clearInterval(timerInterval);sectionAnswers[currentQ]=idx;
+  const q=SECTIONS[sectionIdx].questions[currentQ];
+  document.querySelectorAll('.choice-btn').forEach((b,i)=>{b.disabled=true;if(i===q.correct)b.className='choice-btn correct';else if(i===idx)b.className='choice-btn incorrect';});
+  document.getElementById('explanation-box').innerHTML='<div class="explanation"><div class="explanation-label">'+(idx===q.correct?'Correct':'Incorrect')+'</div><p>'+q.explanation+'</p></div>';
+  document.getElementById('btn-skip').style.display='none';
+  if(currentQ<SECTIONS[sectionIdx].questions.length-1)document.getElementById('btn-next').style.display='';
+  else document.getElementById('btn-end-section').style.display='';
+  renderDots2();
+}
+
+function doSkip2(){
+  clearInterval(timerInterval);if(sectionAnswers[currentQ]===null)sectionAnswers[currentQ]='skip';
+  const q=SECTIONS[sectionIdx].questions[currentQ];
+  document.querySelectorAll('.choice-btn').forEach((b,i)=>{b.disabled=true;if(i===q.correct)b.className='choice-btn correct';});
+  document.getElementById('explanation-box').innerHTML='<div class="explanation"><div class="explanation-label">Skipped</div><p>'+q.explanation+'</p></div>';
+  document.getElementById('btn-skip').style.display='none';
+  if(currentQ<SECTIONS[sectionIdx].questions.length-1)document.getElementById('btn-next').style.display='';
+  else document.getElementById('btn-end-section').style.display='';
+  renderDots2();
+}
+
+function doNext(){currentQ++;renderQ2();}
+function endSection(){
+  allResults.push({section:SECTIONS[sectionIdx],questions:SECTIONS[sectionIdx].questions,answers:[...sectionAnswers]});
+  sectionIdx++;showTransition();
+}
+
+function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');}
+
+function showResults(){
+  let totalCorrect=0,totalQ=0;
+  const scoresHTML=allResults.map(r=>{
+    let c=0;r.answers.forEach((a,i)=>{if(a===r.questions[i].correct)c++;});
+    totalCorrect+=c;totalQ+=r.questions.length;
+    const pct=Math.round(c/r.questions.length*100);
+    const sec=r.section;
+    return`<div class="score-section">
+      <span class="score-section-label">${sec.name}</span>
+      <div class="score-bar-wrap"><div class="score-bar-fill" style="width:${pct}%;background:${sec.color};"></div></div>
+      <span class="score-section-pct" style="color:${sec.color}">${pct}%</span>
+    </div>`;
+  }).join('');
+  document.getElementById('section-scores').innerHTML=`<div style="background:var(--bg2);border:1px solid var(--border);padding:1.5rem;">${scoresHTML}</div>`;
+
+  const overall=Math.round(totalCorrect/totalQ*100);
+  document.getElementById('score-pct').textContent=overall+'%';
+  document.getElementById('score-grade').textContent=overall>=90?'Excellent — ready to fly':overall>=70?'Good performance — review weak sections':overall>=50?'Needs work — focus on lower scoring sections':'Keep studying all sections';
+
+  const rl=document.getElementById('review-list');rl.innerHTML='';
+  allResults.forEach(r=>{
+    rl.innerHTML+=`<div style="font-family:var(--font-mono);font-size:11px;color:${r.section.color};text-transform:uppercase;letter-spacing:0.15em;margin:1.5rem 0 0.75rem;padding-top:1.5rem;border-top:1px solid var(--border);">${r.section.name}</div>`;
+    r.questions.forEach((q,i)=>{
+      const a=r.answers[i];const ok=a===q.correct,skip=a===null||a==='skip';
+      const qLabel=q.isTableQ?`Find value at X=${q.x}, Y=${q.y}`:q.isInstrument?'Identify attitude and heading':q.isBlock?`How many blocks does block ${q.target+1} touch?`:q.text;
+      rl.innerHTML+=`<div class="review-item"><span class="review-badge ${ok?'badge-correct':skip?'badge-skipped':'badge-incorrect'}">${ok?'Correct':skip?'Skipped':'Incorrect'}</span>
+      <div class="review-q">${qLabel}</div>
+      ${!ok&&!skip?`<div class="review-detail">Your answer: ${q.choices[a]}</div>`:''}
+      <div class="review-detail">Correct: ${q.choices[q.correct]}</div>
+      <div class="review-exp">${q.explanation}</div></div>`;
+    });
+  });
+  showScreen('screen-results');
+}
+</script>
+</body>
+</html>

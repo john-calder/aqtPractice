@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aviation Information — AQT Prep</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<style>:root{--accent:var(--purple);}</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="nav-logo"><div class="dot" style="background:var(--purple)"></div>AQT PREP</a>
+  <div class="nav-right">
+    <span class="nav-section-label" style="border-color:var(--purple);color:var(--purple);">03 · Aviation Info</span>
+    <a href="index.html" class="nav-back">← Home</a>
+  </div>
+</nav>
+
+<div class="page-wrap">
+
+  <div class="screen active" id="screen-start">
+    <div class="section-header">
+      <div class="section-eyebrow" style="color:var(--purple);">Section 03</div>
+      <h1>Aviation Information</h1>
+      <p>Aerodynamics, instruments, airspace, regulations, weather, and aircraft systems. This section tests broad aviation knowledge — the fundamentals every aviator must know.</p>
+    </div>
+    <div class="settings-panel">
+      <div class="setting-group"><span class="setting-label">Questions</span>
+        <select id="sel-count"><option value="10">10 questions</option><option value="20" selected>20 questions</option><option value="30">30 questions</option></select></div>
+      <div class="setting-group"><span class="setting-label">Time per question</span>
+        <select id="sel-time"><option value="0">No limit</option><option value="20">20 seconds</option><option value="30" selected>30 seconds</option><option value="60">60 seconds</option></select></div>
+      <button class="btn" style="background:var(--purple);color:#fff;font-family:var(--font-display);font-weight:700;font-size:13px;letter-spacing:0.06em;text-transform:uppercase;padding:10px 24px;border:none;cursor:pointer;" onclick="beginSession()">Begin</button>
+    </div>
+  </div>
+
+  <div class="screen" id="screen-quiz">
+    <div class="progress-wrap">
+      <div class="progress-track"><div class="progress-fill" id="progress-bar" style="width:0%;background:var(--purple)"></div></div>
+      <span id="q-counter">1 / 20</span>
+    </div>
+    <div id="timer-wrap" style="display:none;">
+      <div class="tbar-track"><div class="tbar-fill" id="timer-bar" style="width:100%;background:var(--purple)"></div></div>
+      <span id="timer-display">30s</span>
+    </div>
+    <div class="dot-tracker" id="dot-tracker"></div>
+    <div class="quiz-card">
+      <div style="font-family:var(--font-mono);font-size:10px;color:var(--purple);letter-spacing:0.15em;text-transform:uppercase;margin-bottom:0.75rem;" id="q-category"></div>
+      <div class="question-text" id="q-text"></div>
+      <div class="choices" id="choices"></div>
+      <div id="explanation-box"></div>
+      <div class="ctrl-row" id="ctrl-row">
+        <button class="btn btn-outline" onclick="doSkip()">Skip</button>
+        <button class="btn" id="btn-next" onclick="doNext()" style="display:none;background:var(--purple);color:#fff;font-family:var(--font-display);font-weight:700;font-size:13px;text-transform:uppercase;padding:10px 24px;border:none;cursor:pointer;">Next</button>
+        <button class="btn" id="btn-finish" onclick="showResults()" style="display:none;background:var(--purple);color:#fff;font-family:var(--font-display);font-weight:700;font-size:13px;text-transform:uppercase;padding:10px 24px;border:none;cursor:pointer;">View Results</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="screen" id="screen-results">
+    <div class="results-header">
+      <div class="section-eyebrow" style="color:var(--purple);">Session complete</div>
+      <div class="score-big" id="score-pct" style="color:var(--purple);">0%</div>
+      <div class="score-label" id="score-grade"></div>
+    </div>
+    <div class="meta-grid" id="meta-grid"></div>
+    <div class="review-section"><h2>Full Review</h2><div id="review-list"></div></div>
+    <div class="ctrl-row" style="margin-top:2rem;">
+      <button class="btn" style="background:var(--purple);color:#fff;font-family:var(--font-display);font-weight:700;font-size:13px;text-transform:uppercase;padding:10px 24px;border:none;cursor:pointer;" onclick="restart()">Try Again</button>
+      <a href="index.html" class="btn btn-outline">← All Sections</a>
+    </div>
+  </div>
+
+</div>
+<script>
+const QUESTIONS = [
+  {cat:"Aerodynamics",text:"What are the four forces acting on an aircraft in straight-and-level flight?",choices:["Lift, weight, thrust, drag","Lift, gravity, power, friction","Velocity, mass, lift, thrust","Pressure, lift, drag, inertia"],correct:0,explanation:"The four aerodynamic forces are lift (up), weight/gravity (down), thrust (forward), and drag (rearward). In steady level flight these forces are balanced."},
+  {cat:"Aerodynamics",text:"What happens to the critical angle of attack when an aircraft exceeds it?",choices:["Lift doubles","A stall occurs","The aircraft speeds up","Drag decreases sharply"],correct:1,explanation:"The critical angle of attack (~15-20° for most aircraft) is the angle beyond which airflow separates from the wing, causing a sudden loss of lift — a stall. Stall is always an AOA event, never a speed event alone."},
+  {cat:"Aerodynamics",text:"Which control surface primarily controls roll?",choices:["Elevator","Rudder","Ailerons","Flaps"],correct:2,explanation:"Ailerons are located on the outer trailing edge of the wings and control roll (bank). Moving one aileron up and the other down creates differential lift, banking the aircraft."},
+  {cat:"Aerodynamics",text:"What is induced drag?",choices:["Drag caused by skin friction","Drag resulting from lift production","Drag from landing gear","Drag from the propeller slipstream"],correct:1,explanation:"Induced drag is a byproduct of lift generation. As the wing produces lift, it creates wingtip vortices and a rearward component of the lift force. Induced drag decreases as airspeed increases."},
+  {cat:"Aerodynamics",text:"The center of gravity must stay within limits because:",choices:["It affects fuel consumption only","It determines engine power","It affects longitudinal stability and control","It is required only for IFR flight"],correct:2,explanation:"CG position critically affects pitch stability and elevator authority. Forward CG increases stability but requires more elevator for rotation. Aft CG can make the aircraft pitch-unstable and uncontrollable."},
+  {cat:"Instruments",text:"Which instrument uses a gyroscope to indicate the aircraft's attitude relative to the horizon?",choices:["Turn coordinator","Attitude indicator (artificial horizon)","Heading indicator","Vertical speed indicator"],correct:1,explanation:"The attitude indicator (artificial horizon) uses a gyroscope stabilized in space to display the aircraft's pitch and bank relative to a simulated horizon line."},
+  {cat:"Instruments",text:"What does a magnetic compass measure?",choices:["True north heading","Magnetic heading relative to magnetic north","Aircraft bank angle","Rate of turn"],correct:1,explanation:"A magnetic compass aligns with Earth's magnetic field to show magnetic heading. It must be corrected for variation (magnetic vs. true north) and deviation (local magnetic interference)."},
+  {cat:"Airspace",text:"What is the floor of Class A airspace in the contiguous United States?",choices:["14,500 ft MSL","18,000 ft MSL","24,000 ft MSL","FL 600"],correct:1,explanation:"Class A airspace begins at 18,000 ft MSL (FL180) and extends to FL600 in the CONUS. All operations in Class A require IFR clearance and communication with ATC."},
+  {cat:"Airspace",text:"What equipment is required to operate in Class B airspace?",choices:["VOR receiver","Two-way radio and transponder with Mode C","ELT","Autopilot"],correct:1,explanation:"Class B airspace requires a two-way radio for ATC communication and an encoding altimeter (Mode C transponder) to provide altitude readout to ATC."},
+  {cat:"Weather",text:"What does a cumulonimbus cloud indicate?",choices:["Stable air and smooth ride","Severe turbulence, icing, and possible hail","Fog and low visibility only","Light turbulence at cruise altitude"],correct:1,explanation:"Cumulonimbus (CB) clouds are thunderstorm clouds associated with severe turbulence, icing at multiple levels, heavy rain, hail, and lightning. Pilots should maintain at least 20 nm lateral distance from CB cells."},
+  {cat:"Weather",text:"Wind shear is most hazardous during which phase of flight?",choices:["Cruise at altitude","Takeoff and landing","Taxiing","Engine runup"],correct:1,explanation:"Wind shear — sudden changes in wind speed/direction — is most dangerous during takeoff and landing because there is little altitude margin for recovery and the aircraft is at low airspeed near the ground."},
+  {cat:"Regulations",text:"Under FAR 91.3, the pilot in command is responsible for:",choices:["ATC routing decisions","The safe operation of the aircraft","Maintenance scheduling","Fuel uplift calculations"],correct:1,explanation:"FAR 91.3 states the PIC is directly responsible for, and is the final authority as to, the operation of the aircraft. This authority cannot be delegated."},
+  {cat:"Navigation",text:"What does the term 'true course' mean?",choices:["Course measured from magnetic north","Course measured from true (geographic) north","The shortest path between two points","Actual path flown over the ground"],correct:1,explanation:"True course is the direction of flight measured clockwise from true (geographic) north. To convert to magnetic course, apply magnetic variation. To get compass heading, also apply compass deviation."},
+  {cat:"Navigation",text:"What is the purpose of RAIM in GPS navigation?",choices:["To amplify the GPS signal","To check GPS signal integrity and alert when accuracy is inadequate","To provide terrain clearance warnings","To calculate wind correction angle"],correct:1,explanation:"Receiver Autonomous Integrity Monitoring (RAIM) monitors the consistency of GPS satellite signals to ensure navigation accuracy is within safe limits. It alerts pilots when GPS cannot be used reliably for the current phase of flight."},
+  {cat:"Aerodynamics",text:"When an aircraft is in a coordinated turn, the load factor:",choices:["Decreases because lift is shared","Increases above 1G","Stays at 1G","Decreases below 1G"],correct:1,explanation:"In a banked turn, the vertical component of lift must still equal weight while the horizontal component provides centripetal force. Total lift — and thus load factor — must increase. At 60° bank, load factor = 2G."},
+  {cat:"Instruments",text:"A pitot tube blockage (with open static) will cause the airspeed indicator to:",choices:["Read higher than actual","Read lower than actual","Act like an altimeter (reading increases with altitude)","Freeze at current reading"],correct:2,explanation:"With a blocked pitot but open static port, the trapped pitot pressure acts as a reference. As altitude increases, static pressure falls, so the indicated airspeed increases — the ASI behaves like an altimeter."},
+  {cat:"Weather",text:"What is a SIGMET?",choices:["A routine weather briefing product","A forecast for significant meteorological phenomena hazardous to all aircraft","A pilot weather report","A terminal area forecast"],correct:1,explanation:"A SIGMET (Significant Meteorological Information) is issued by the NWS Aviation Weather Center for weather hazardous to all aircraft: severe turbulence, severe icing, IMC from volcanic ash, or tropical cyclones."},
+  {cat:"Aerodynamics",text:"Aspect ratio of a wing is defined as:",choices:["Chord divided by span","Span divided by average chord","Wing area times thickness","Lift divided by drag"],correct:1,explanation:"Aspect ratio = wingspan / mean chord (or span² / area). High aspect ratio wings (long and narrow) produce less induced drag and are more efficient — common in gliders and high-altitude aircraft."},
+  {cat:"Airspace",text:"A VFR pilot entering Class D airspace must:",choices:["File an IFR flight plan","Establish two-way radio communication with the tower","Have a Mode C transponder","Have an instrument rating"],correct:1,explanation:"To enter Class D airspace a pilot must establish two-way radio communication with the controlling ATC facility (tower). No transponder is required (unless in overlying Class B/C shelf) and no flight plan is required."},
+  {cat:"Regulations",text:"What is the minimum flight visibility for VFR flight in Class G airspace below 1,200 ft AGL during the day?",choices:["1 statute mile","3 statute miles","5 statute miles","Clear of clouds only"],correct:0,explanation:"FAR 91.155: In Class G airspace below 1,200 ft AGL during daytime, minimum visibility is 1 statute mile and pilots must remain clear of clouds (no specific cloud clearance distances apply)."},
+  {cat:"Weather",text:"What causes a temperature inversion?",choices:["Cold air rising above warm air","A layer of warm air sitting above cooler surface air","Radiation cooling of the upper atmosphere","High humidity at sea level"],correct:1,explanation:"A temperature inversion occurs when a layer of warmer air overlies cooler air near the surface — opposite the normal lapse rate. Inversions trap pollutants, create smooth air above, and can produce fog or low ceilings below."},
+  {cat:"Navigation",text:"When flying a VOR radial, what does needle deflection indicate?",choices:["Distance from the station","Deviation from the selected course","Ground speed","Wind direction"],correct:1,explanation:"The CDI needle on a VOR shows course deviation — left means the course is to the left, right means to the right. It does not indicate distance. Full-scale deflection = 10° off course on a standard VOR."},
+  {cat:"Aerodynamics",text:"What is 'ground effect'?",choices:["Increased drag when near the runway","Reduction in induced drag when within approximately one wingspan of the ground","Increased stall speed near terrain","Turbulence caused by surface winds"],correct:1,explanation:"Ground effect occurs when the aircraft is within approximately one wingspan height of the surface. The ground interrupts downwash, reducing induced drag and allowing the aircraft to fly at lower speeds — it can cause floating during landing flare."},
+  {cat:"Instruments",text:"The turn coordinator shows:",choices:["Rate of turn and bank angle precisely","Rate of turn and coordination (ball/inclinometer)","Bank angle and pitch attitude","Heading and yaw rate"],correct:1,explanation:"The turn coordinator's miniature aircraft indicates the rate of turn (and roll rate during initiation). The inclinometer (ball) indicates coordination — centered ball means coordinated, deflected ball means slip or skid."},
+  {cat:"Regulations",text:"How often must an aircraft's altimeter and static system be inspected for IFR flight?",choices:["Every 12 calendar months","Every 24 calendar months","Every 100 flight hours","Every annual inspection"],correct:1,explanation:"FAR 91.411 requires that the altimeter, static pressure system, and automatic pressure altitude reporting equipment be tested and inspected within the preceding 24 calendar months for IFR operations."},
+];
+
+let session=[],answers=[],current=0,timerInterval=null,timePerQ=30,totalQ=20;
+function shuffle(arr){const a=[...arr];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function beginSession(){
+  totalQ=parseInt(document.getElementById('sel-count').value);
+  timePerQ=parseInt(document.getElementById('sel-time').value);
+  session=shuffle(QUESTIONS).slice(0,totalQ);
+  answers=new Array(totalQ).fill(null);current=0;
+  showScreen('screen-quiz');renderQ();
+}
+function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');}
+function renderDots(){const t=document.getElementById('dot-tracker');t.innerHTML='';session.forEach((_,i)=>{const d=document.createElement('div');d.className='q-dot'+(i===current?' current':answers[i]===null?'':answers[i]==='skip'?' skip':answers[i]===session[i].correct?' ok':' bad');t.appendChild(d);});}
+function renderQ(){
+  clearInterval(timerInterval);const q=session[current];
+  document.getElementById('progress-bar').style.width=(current/session.length*100)+'%';
+  document.getElementById('q-counter').textContent=(current+1)+' / '+session.length;
+  document.getElementById('q-category').textContent=q.cat;
+  document.getElementById('q-text').textContent=q.text;
+  renderDots();
+  const ch=document.getElementById('choices');ch.innerHTML='';
+  q.choices.forEach((c,i)=>{const btn=document.createElement('button');btn.className='choice-btn';btn.innerHTML='<span class="choice-letter">'+String.fromCharCode(65+i)+'</span>'+c;btn.onclick=()=>selectAnswer(i);ch.appendChild(btn);});
+  document.getElementById('explanation-box').innerHTML='';
+  document.getElementById('btn-next').style.display='none';
+  document.getElementById('btn-finish').style.display='none';
+  const sk=document.querySelector('#ctrl-row .btn-outline');if(sk)sk.style.display='';
+  if(timePerQ>0){let left=timePerQ;document.getElementById('timer-wrap').style.display='';document.getElementById('timer-display').textContent=left+'s';document.getElementById('timer-bar').style.width='100%';
+    timerInterval=setInterval(()=>{left--;const pct=(left/timePerQ)*100;document.getElementById('timer-bar').style.width=pct+'%';document.getElementById('timer-bar').className='tbar-fill'+(pct<25?' danger':pct<50?' warn':'');document.getElementById('timer-display').textContent=left+'s';if(left<=0){clearInterval(timerInterval);doSkip(true);}},1000);
+  }else{document.getElementById('timer-wrap').style.display='none';}
+}
+function selectAnswer(idx){if(answers[current]!==null)return;clearInterval(timerInterval);answers[current]=idx;const q=session[current];
+  document.querySelectorAll('.choice-btn').forEach((b,i)=>{b.disabled=true;if(i===q.correct)b.className='choice-btn correct';else if(i===idx)b.className='choice-btn incorrect';});
+  document.getElementById('explanation-box').innerHTML='<div class="explanation" style="border-color:var(--purple)"><div class="explanation-label" style="color:var(--purple)">'+(idx===q.correct?'Correct':'Incorrect')+'</div><p>'+q.explanation+'</p></div>';
+  const sk=document.querySelector('#ctrl-row .btn-outline');if(sk)sk.style.display='none';
+  if(current<session.length-1)document.getElementById('btn-next').style.display='';else document.getElementById('btn-finish').style.display='';renderDots();
+}
+function doSkip(){clearInterval(timerInterval);if(answers[current]===null)answers[current]='skip';const q=session[current];
+  document.querySelectorAll('.choice-btn').forEach((b,i)=>{b.disabled=true;if(i===q.correct)b.className='choice-btn correct';});
+  document.getElementById('explanation-box').innerHTML='<div class="explanation" style="border-color:var(--purple)"><div class="explanation-label" style="color:var(--purple)">Skipped</div><p>'+q.explanation+'</p></div>';
+  const sk=document.querySelector('#ctrl-row .btn-outline');if(sk)sk.style.display='none';
+  if(current<session.length-1)document.getElementById('btn-next').style.display='';else document.getElementById('btn-finish').style.display='';renderDots();
+}
+function doNext(){current++;renderQ();}
+function showResults(){clearInterval(timerInterval);
+  let correct=0,incorrect=0,skipped=0;
+  answers.forEach((a,i)=>{if(a===null||a==='skip')skipped++;else if(a===session[i].correct)correct++;else incorrect++;});
+  const pct=Math.round(correct/session.length*100);
+  document.getElementById('score-pct').textContent=pct+'%';
+  document.getElementById('score-grade').textContent=pct>=90?'Excellent — strong aviation knowledge':pct>=70?'Good — review missed topics':pct>=50?'Keep studying — focus on weak areas':'Review fundamentals and retry';
+  document.getElementById('meta-grid').innerHTML=`<div class="meta-item"><span class="meta-num" style="color:var(--green)">${correct}</span><span class="meta-lbl">Correct</span></div><div class="meta-item"><span class="meta-num" style="color:var(--red)">${incorrect}</span><span class="meta-lbl">Incorrect</span></div><div class="meta-item"><span class="meta-num" style="color:var(--amber)">${skipped}</span><span class="meta-lbl">Skipped</span></div><div class="meta-item"><span class="meta-num">${session.length}</span><span class="meta-lbl">Total</span></div>`;
+  const rl=document.getElementById('review-list');rl.innerHTML='';
+  session.forEach((q,i)=>{const a=answers[i];const ok=a===q.correct,skip=a===null||a==='skip';
+    rl.innerHTML+=`<div class="review-item"><span class="review-badge ${ok?'badge-correct':skip?'badge-skipped':'badge-incorrect'}">${ok?'Correct':skip?'Skipped':'Incorrect'}</span><div class="review-q">Q${i+1}: ${q.text}</div>${!ok&&!skip?`<div class="review-detail">Your answer: ${q.choices[a]}</div>`:''}<div class="review-detail">Correct: ${q.choices[q.correct]}</div><div class="review-exp">${q.explanation}</div></div>`;});
+  showScreen('screen-results');
+}
+function restart(){beginSession();}
+</script>
+</body>
+</html>
